@@ -1,0 +1,58 @@
+---
+import type { Prefs } from "../lib/engine/types";
+
+interface Props { prefs: Prefs }
+const { prefs } = Astro.props;
+const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const hhmm = (m: number | null) => (m === null ? "" : `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`);
+const weights: [string, string, number, string][] = [
+  ["weightDayOff", "Day off", prefs.weights.dayOff, "points per session on a day off"],
+  ["weightEarly", "Early start", prefs.weights.early, "points per 30 min before the earliest start"],
+  ["weightLate", "Late finish", prefs.weights.late, "points per 30 min after the latest end"],
+  ["weightGap", "Long gap", prefs.weights.gap, "points per 30 min over the maximum gap"],
+  ["weightWalk", "Building change", prefs.weights.walk, "points per too-short walk between buildings"],
+];
+---
+
+<form method="post" action="/api/prefs" class="h-form" id="prefs-form">
+  <fieldset class="h-fieldset">
+    <legend>Days off</legend>
+    <p class="h-hint">Tick days you would like to keep free of classes.</p>
+    {DAYS.map((d, i) => (
+      <span class="h-check">
+        <input type="checkbox" id={`day-${i}`} name="daysOff" value={String(i)} checked={prefs.daysOff.includes(i as any)} />
+        <label for={`day-${i}`}>{d}</label>
+      </span>
+    ))}
+  </fieldset>
+
+  <fieldset class="h-fieldset">
+    <legend>Times</legend>
+    <p class="h-hint">Leave a box empty for no preference.</p>
+    <div class="h-row">
+      <div class="h-field"><label for="earliestStart">Earliest start</label><input id="earliestStart" name="earliestStart" type="time" value={hhmm(prefs.earliestStartMin)} /></div>
+      <div class="h-field"><label for="latestEnd">Latest end</label><input id="latestEnd" name="latestEnd" type="time" value={hhmm(prefs.latestEndMin)} /></div>
+      <div class="h-field"><label for="maxGapMin">Longest gap (minutes)</label><input id="maxGapMin" name="maxGapMin" type="number" min="0" step="1" inputmode="numeric" value={prefs.maxGapMin ?? ""} /></div>
+      <div class="h-field"><label for="minWalkGapMin">Shortest gap between buildings (minutes)</label><input id="minWalkGapMin" name="minWalkGapMin" type="number" min="0" step="1" inputmode="numeric" value={prefs.minWalkGapMin ?? ""} /></div>
+    </div>
+  </fieldset>
+
+  <fieldset class="h-fieldset">
+    <legend>How much each matters</legend>
+    <p class="h-hint">Weights multiply the penalty. 0 switches that preference off.</p>
+    <div class="h-row">
+      {weights.map(([name, label, value, hint]) => (
+        <div class="h-field">
+          <label for={name}>{label}</label>
+          <input id={name} name={name} type="number" min="0" step="any" inputmode="decimal" value={value} aria-describedby={`${name}-hint`} />
+          <span class="h-hint" id={`${name}-hint`}>{hint}</span>
+        </div>
+      ))}
+    </div>
+  </fieldset>
+
+  <div class="h-actions">
+    <button class="h-btn" type="submit">Save preferences</button>
+    <button class="h-btn h-secondary" type="submit" name="reset" value="1" formnovalidate>Reset to defaults</button>
+  </div>
+</form>

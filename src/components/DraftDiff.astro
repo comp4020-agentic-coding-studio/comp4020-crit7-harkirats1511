@@ -1,0 +1,97 @@
+---
+// Draft vs real, per changed group, plus a clash-count comparison and seat warnings.
+import { allClashes } from "../lib/engine/clash";
+import { diffAlloc } from "../lib/engine/draft";
+import type { Allocation, Catalog, SeatsUsed, Term } from "../lib/engine/types";
+import { courseHref, groupLabel, optionSessions, plural } from "./h-format";
+
+interface Props {
+  catalog: Catalog;
+  term: Term;
+  real: Allocation;
+  draftAlloc: Allocation;
+  seats: SeatsUsed;
+  draftId: string;
+}
+const { catalog, term, real, draftAlloc, seats, draftId } = Astro.props;
+
+const moves = diffAlloc(real, draftAlloc);
+const changed = new Map(moves.map((m) => [m.groupId, m]));
+const unchanged = [...real.keys()].filter((g) => !changed.has(g)).sort();
+const realClashes = allClashes(real, catalog).length;
+const draftClashes = allClashes(draftAlloc, catalog).length;
+
+const full = (optionId: string | null) => {
+  if (!optionId) return false;
+  const o = catalog.options.get(optionId);
+  return !!o && o.capacity !== null && (seats.get(optionId) ?? 0) >= o.capacity;
+};
+const kind = (m: (typeof moves)[number]) => (m.toOptionId === null ? "Dropped" : m.fromOptionId === null ? "Added" : "Moved");
+const fullMoves = moves.filter((m) => full(m.toOptionId));
+const trend = draftClashes < realClashes ? "fewer" : draftClashes > realClashes ? "more" : "same";
+---
+
+<section aria-labelledby="h-diff-h" class="h-panel">
+  <h2 id="h-diff-h">Draft compared with your real timetable</h2>
+  <p class:list={["h-tag", { "h-tag-good": draftClashes === 0, "h-tag-bad": draftClashes > 0 }]}>
+    {draftClashes === 0 ? "✓ Draft has no clashes" : `⚠ Draft has ${plural(draftClashes, "clash", "clashes")}`}
+  </p>
+  <p>
+    Real timetable: <strong>{plural(realClashes, "clash", "clashes")}</strong>. Draft: <strong>{plural(draftClashes, "clash", "clashes")}</strong>{trend === "fewer" ? " (fewer than now)." : trend === "more" ? " (more than now)." : " (no change)."}
+  </p>
+  {
+    fullMoves.length > 0 && (
+      <div class="h-flash h-err" role="alert">
+        <strong>&#x26A0; Seats warning.</strong> These draft options are full right now, so applying the draft will fail until a seat opens:
+        <ul class="h-list">
+          {fullMoves.map((m) => (
+            <li>{groupLabel(catalog, m.groupId)} {catalog.options.get(m.toOptionId!)?.code}</li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+</section>
+
+{
+  moves.length === 0 ? (
+    <p>The draft is identical to your real timetable. Choose classes inside the draft from your <a href="/timetable/">timetable</a> or a course page; changes go to the draft only.</p>
+  ) : (
+    <div class="h-scroll">
+      <table class="h-table">
+        <caption>{plural(moves.length, "changed class", "changed classes")}</caption>
+        <thead>
+          <tr><th scope="col">Class</th><th scope="col">Change</th><th scope="col">Real timetable</th><th scope="col">Draft</th><th scope="col">Seats</th></tr>
+        </thead>
+        <tbody>
+          {moves.map((m) => {
+            const from = m.fromOptionId ? catalog.options.get(m.fromOptionId) : undefined;
+            const to = m.toOptionId ? catalog.options.get(m.toOptionId) : undefined;
+            return (
+              <tr>
+                <th scope="row"><a href={courseHref(catalog, m.groupId, draftId)}>{groupLabel(catalog, m.groupId)}</a></th>
+                <td><span class="h-tag">{kind(m) === "Dropped" ? "− " : kind(m) === "Added" ? "+ " : "→ "}{kind(m)}</span></td>
+                <td>{from ? <><strong>{from.code}</strong>{optionSessions(term, from).map((l) => <div>{l}</div>)}</> : "Not enrolled"}</td>
+                <td>{to ? <><strong>{to.code}</strong>{optionSessions(term, to).map((l) => <div>{l}</div>)}</> : "Dropped"}</td>
+                <td>{to ? (full(m.toOptionId) ? <span class="h-tag h-tag-bad">&#x26A0; Full</span> : to.capacity === null ? "Not published" : `${to.capacity - (seats.get(to.id) ?? 0)} left`) : "—"}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+{
+  unchanged.length > 0 && (
+    <details>
+      <summary>{plural(unchanged.length, "class", "classes")} unchanged</summary>
+      <ul class="h-list">
+        {unchanged.map((g) => (
+          <li>{groupLabel(catalog, g)} {catalog.options.get(real.get(g)!)?.code} <span class="h-muted">(unchanged)</span></li>
+        ))}
+      </ul>
+    </details>
+  )
+}

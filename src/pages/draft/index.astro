@@ -1,7 +1,50 @@
 ---
 import Shell from "../../layouts/Shell.astro";
+import DraftDiff from "../../components/DraftDiff.astro";
+import "../../styles/pages.css";
+import { getViewState } from "../../lib/view";
+
+const v = getViewState(Astro.url);
+const draft = v.draft;
 ---
 
-<Shell title="Draft">
-  <h1>Draft</h1>
+<Shell title="Draft" view={v}>
+  <div class="h-page">
+    <h1>Draft</h1>
+    {
+      !draft ? (
+        <section class="h-panel" aria-labelledby="h-what">
+          <h2 id="h-what">What-if mode</h2>
+          <p class="h-lede">
+            A draft is a private copy of your timetable where you can try selecting, moving and dropping classes without changing the real one.
+            When you are happy, apply the draft to change your real timetable in one step (seats are checked again then), or discard it to walk away.
+          </p>
+          <form method="post" action="/api/draft/new" class="h-form">
+            <div class="h-field">
+              <label for="draft-name">Draft name (optional)</label>
+              <input id="draft-name" name="name" type="text" maxlength="60" autocomplete="off" class="h-name" />
+            </div>
+            <div class="h-actions"><button class="h-btn" type="submit">Start a draft</button></div>
+          </form>
+        </section>
+      ) : (
+        <>
+          <p class="h-lede">
+            Draft <strong>{draft.name}</strong> is open. Classes you choose from the links below change the draft only; your real timetable stays as it is until you apply.
+          </p>
+          <DraftDiff catalog={v.catalog} term={v.term} real={v.realAlloc} draftAlloc={v.alloc} seats={v.seats} draftId={draft.id} />
+          <div class="h-actions">
+            <form method="post" action="/api/draft/apply">
+              <input type="hidden" name="draftId" value={draft.id} />
+              <button class="h-btn" type="submit">Apply draft to real timetable</button>
+            </form>
+            <form method="post" action="/api/draft/discard">
+              <input type="hidden" name="draftId" value={draft.id} />
+              <button class="h-btn h-danger" type="submit">Discard draft</button>
+            </form>
+          </div>
+        </>
+      )
+    }
+  </div>
 </Shell>

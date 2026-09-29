@@ -1,0 +1,64 @@
+---
+// Batches newest first; per entry "COURSE Group: from -> to". Undo button on the newest undoable batch.
+import type { Catalog } from "../lib/engine/types";
+import type { HistoryBatch } from "../lib/services/alloc";
+import { fmtWhen, groupLabel, optionCode, plural, sourceWords } from "./h-format";
+
+interface Props {
+  batches: HistoryBatch[];
+  catalog: Catalog;
+}
+const { batches, catalog } = Astro.props;
+const byId = new Map(batches.map((b) => [b.batchId, b]));
+const when = (id: string) => {
+  const b = byId.get(id);
+  return b ? fmtWhen(b.createdAt) : "an earlier change";
+};
+---
+
+{
+  batches.length === 0 ? (
+    <div class="h-panel">
+      <h2>No changes yet</h2>
+      <p>
+        Every time you select, drop, move or swap a class, or apply a draft or an auto-fix, it is recorded here and the newest
+        change can be undone.
+      </p>
+      <p><a href="/timetable/">Go to your timetable</a></p>
+    </div>
+  ) : (
+    <ol class="h-plain" aria-label="Changes, newest first">
+      {batches.map((b) => (
+        <li class:list={["h-batch", { "h-undone": b.undoneByBatchId !== null }]} id={`b-${b.batchId}`}>
+          <div class="h-batch-head">
+            <strong>{sourceWords(b.source)}</strong>
+            <span class="h-mono">{fmtWhen(b.createdAt)}</span>
+            <span>{plural(b.entries.length, "class change")}</span>
+            {b.undoneByBatchId !== null && (
+              <span class="h-tag" title="This change was reversed">&#x21B6; Undone ({when(b.undoneByBatchId)})</span>
+            )}
+            {b.undoesBatchId !== null && (
+              <span class="h-tag">&#x21B6; Undoes the change of {when(b.undoesBatchId)}</span>
+            )}
+            {b.undoable && (
+              <form method="post" action="/api/undo">
+                <input type="hidden" name="batchId" value={b.batchId} />
+                <button class="h-btn" type="submit">Undo this change</button>
+              </form>
+            )}
+          </div>
+          <div class="h-batch-body">
+            <ul class="h-list">
+              {b.entries.map((e) => (
+                <li>
+                  <strong>{groupLabel(catalog, e.groupId)}</strong>:{" "}
+                  {optionCode(catalog, e.fromOptionId, "not enrolled")} &rarr; {optionCode(catalog, e.toOptionId, "dropped")}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}
