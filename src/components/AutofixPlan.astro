@@ -1,11 +1,11 @@
 ---
-// Renders an autofixPreview: clean / solved (move plan + confirm) / unsolved (precise reasons).
+// Renders an autofixPreview: clean / solved (move plan + confirm) / unsolved (why, per clash).
 import { allClashes, clashesFor } from "../lib/engine/clash";
 import { scorePrefs } from "../lib/engine/prefs";
 import { autofix } from "../lib/engine/solve";
 import type { Allocation, Catalog, Prefs, SeatsUsed, Term } from "../lib/engine/types";
 import type { AutofixPreview } from "../lib/services/alloc";
-import { courseHref, groupLabel, optionSessions, overlapWords, plural } from "./h-format";
+import { courseHref, groupLabel, optionCode, overlapWords, plural } from "./h-format";
 
 interface Props {
   preview: AutofixPreview;
@@ -25,28 +25,17 @@ const isFull = (id: string) => {
   const o = catalog.options.get(id)!;
   return o.capacity !== null && (seats.get(id) ?? 0) >= o.capacity;
 };
-
-// For the unsolved case: what does each clashing class have to move to?
-function classReport(groupId: string) {
+// Why a clashing class cannot move, in one sentence.
+function why(groupId: string): string {
   const g = catalog.groups.get(groupId)!;
   const cur = real.get(groupId);
-  const others = g.options.filter((o) => o.id !== cur).map((o) => ({
-    o,
-    overflow: o.overflow,
-    full: isFull(o.id),
-    clashing: clashesFor(o.id, real, catalog).length > 0,
-  }));
-  const real_ = others.filter((x) => !x.overflow);
-  let summary: string;
-  if (others.length === 0) summary = `${groupLabel(catalog, groupId)} has no other options at all, so it cannot move.`;
-  else if (real_.length === 0)
-    summary = `${groupLabel(catalog, groupId)} has no other times — the only extra option is an overflow copy in the same slot, so moving to it changes nothing.`;
-  else if (real_.every((x) => x.full)) summary = `${groupLabel(catalog, groupId)} has other times, but every one is full.`;
-  else if (real_.every((x) => x.full || x.clashing)) summary = `${groupLabel(catalog, groupId)} has other times, but each is full or would clash with another class.`;
-  else summary = `${groupLabel(catalog, groupId)} has other times that are free, but no combination of moves clears every clash at once.`;
-  return { groupId, summary, others };
+  const others = g.options.filter((o) => o.id !== cur && !o.overflow);
+  const name = groupLabel(catalog, groupId);
+  if (others.length === 0) return `Your ${name} runs once.`;
+  if (others.every((o) => isFull(o.id))) return `Every other time for your ${name} is full.`;
+  if (others.every((o) => isFull(o.id) || clashesFor(o.id, real, catalog).length > 0)) return `Every other time for your ${name} is full or overlaps another class.`;
+  return `Your ${name} has free times, but no set of moves clears every clash at once.`;
 }
-// Clashes that are permanent: both classes have no other real time. Everything else may still be fixable on its own.
 const immovable = (gid: string) => catalog.groups.get(gid)!.options.every((o) => o.id === real.get(gid) || o.overflow);
 const stuck = clashes.filter((c) => immovable(c.groupA) && immovable(c.groupB));
 const stuckGroups = new Set(stuck.flatMap((c) => [c.groupA, c.groupB]));
@@ -57,137 +46,75 @@ if (!r.solved && !r.alreadyClean && stuck.length > 0 && rest.length > 0) {
   const p = autofix(without, catalog, seats, prefs);
   if (p.solved && !p.alreadyClean) partial = p;
 }
-const reasons = clashes.map((c) => ({ c, a: classReport(c.groupA), b: classReport(c.groupB) }));
-const tag = (x: { overflow: boolean; full: boolean; clashing: boolean }) =>
-  [x.overflow ? "overflow copy, same slot" : "", x.full ? "full" : "", x.clashing ? "would clash" : ""].filter(Boolean).join("; ") || "free";
 ---
 
 {
   r.alreadyClean ? (
-    <section class="h-panel h-good" aria-labelledby="h-af-h">
-      <h2 id="h-af-h"><span aria-hidden="true">&#x2713; </span>Nothing to fix</h2>
-      <p>Your real timetable has no clashes, so auto-fix has no moves to suggest.</p>
+    <section class="block good" aria-labelledby="af-h">
+      <h2 id="af-h">Nothing to fix</h2>
+      <p>No clashes in your timetable.</p>
     </section>
   ) : r.solved ? (
-    <section aria-labelledby="h-af-h">
-      <div class="h-panel">
-        <h2 id="h-af-h">Fix found: {plural(r.moves.length, "move")}</h2>
+    <div class="stack">
+      <section class="block" aria-labelledby="af-h">
+        <h2 id="af-h">Fix found: {plural(r.moves.length, "move")}</h2>
         <p>
-          This is the fewest moves that clears every clash{r.capped ? " the search could check (it stopped at its limit, so a shorter fix may exist)" : ""}. Ties are broken by your <a href="/preferences/">preferences</a>. Nothing changes until you confirm.
+          The fewest moves that clear every clash{r.capped ? " the search could check" : ""}. Ties go to your <a href="/preferences/">preferences</a>. Nothing changes until you confirm.
         </p>
-        <p>
-          Clashes: <strong>{plural(clashes.length, "clash", "clashes")}</strong> now &rarr; <strong>{plural(allClashes(r.resulting, catalog).length, "clash", "clashes")}</strong> after.
-        </p>
-      </div>
-      <div class="h-scroll">
-        <table class="h-table">
-          <caption>Move plan</caption>
-          <thead>
-            <tr><th scope="col">Class</th><th scope="col">From</th><th scope="col">To</th><th scope="col">Why it is safe</th></tr>
-          </thead>
-          <tbody>
-            {r.moves.map((m) => {
-              const from = m.fromOptionId ? catalog.options.get(m.fromOptionId) : undefined;
-              const to = m.toOptionId ? catalog.options.get(m.toOptionId) : undefined;
-              const fixes = clashes.filter((c) => c.groupA === m.groupId || c.groupB === m.groupId);
-              const remaining = to ? clashesFor(to.id, r.resulting, catalog) : [];
-              const left = to && to.capacity !== null ? to.capacity - (seats.get(to.id) ?? 0) : null;
-              return (
+        <div class="table-wrap" style="margin-top:12px">
+          <table class="data stackable">
+            <caption class="sr">Moves</caption>
+            <thead>
+              <tr><th scope="col">Class</th><th scope="col">From</th><th scope="col">To</th></tr>
+            </thead>
+            <tbody>
+              {r.moves.map((m) => (
                 <tr>
                   <th scope="row">{groupLabel(catalog, m.groupId)}</th>
-                  <td>{from ? <><strong>{from.code}</strong>{optionSessions(term, from).map((l) => <div>{l}</div>)}</> : "Not enrolled"}</td>
-                  <td>{to ? <><strong>{to.code}</strong>{optionSessions(term, to).map((l) => <div>{l}</div>)}</> : "Dropped"}</td>
-                  <td>
-                    <ul class="h-list">
-                      {fixes.map((c) => (
-                        <li>Leaves the clash with {groupLabel(catalog, c.groupA === m.groupId ? c.groupB : c.groupA)}.</li>
-                      ))}
-                      <li>{remaining.length === 0 ? "✓ The new time clashes with none of your other classes after all moves." : `⚠ Still clashes with ${remaining.map((c) => groupLabel(catalog, c.groupB)).join(", ")}.`}</li>
-                      <li>{left === null ? "Seats: not published." : `✓ ${plural(left, "seat")} left.`}</li>
-                    </ul>
-                  </td>
+                  <td>{optionCode(catalog, m.fromOptionId, "Not enrolled")}</td>
+                  <td>{optionCode(catalog, m.toOptionId, "Dropped")}</td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      <section class="h-panel" aria-labelledby="h-score-h">
-        <h3 id="h-score-h">Preference score (lower is better)</h3>
-        <p>
-          Now <strong class="h-mono">{before.total}</strong> &rarr; after <strong class="h-mono">{after ? after.total : "n/a"}</strong>.
-          <a href="/preferences/">Change preferences</a>
-        </p>
-        {
-          after && after.penalties.length > 0 ? (
-            <ul class="h-list">
-              {after.penalties.map((p) => <li><span class="h-mono">+{p.points}</span> {p.detail}</li>)}
-            </ul>
-          ) : (
-            <p class="h-muted">No preference penalties after the fix.</p>
-          )
-        }
-      </section>
-      <form method="post" action="/api/autofix" class="h-actions">
-        <input type="hidden" name="basis" value={preview.basis} />
-        <button class="h-btn" type="submit">Confirm and apply {plural(r.moves.length, "move")}</button>
-        <a href="/history/">You can undo it from History</a>
-      </form>
-    </section>
-  ) : (
-    <section aria-labelledby="h-af-h">
-      <div class="h-panel h-warn">
-        <h2 id="h-af-h"><span aria-hidden="true">&#x26A0; </span>No clash-free fix exists</h2>
-        <p>
-          Auto-fix tried every combination of moves{r.capped ? " it could within its search limit" : ""} and found no timetable without clashes, given the options and seats that exist right now. Here is exactly why, for {clashes.length === 1 ? "your clash" : `each of your ${clashes.length} clashes`}.
-        </p>
-      </div>
-      {
-        reasons.map(({ c, a, b }) => (
-          <section class="h-panel" aria-label={`${groupLabel(catalog, c.groupA)} against ${groupLabel(catalog, c.groupB)}`}>
-            <h3>{groupLabel(catalog, c.groupA)} clashes with {groupLabel(catalog, c.groupB)}</h3>
-            <ul class="h-list">
-              {overlapWords(term, c).map((l) => <li>Overlap: {l}</li>)}
-              <li>{plural(c.totalMinutes, "minute")} in total across the term.</li>
-            </ul>
-            {[a, b].map((rep) => (
-              <div>
-                <p><strong>{rep.summary}</strong></p>
-                {rep.others.length > 0 && (
-                  <details><summary>Other options for {groupLabel(catalog, rep.groupId)} ({rep.others.length})</summary>
-                  <ul class="h-list">
-                    {rep.others.map((x) => (
-                      <li>
-                        Option {x.o.code}: {optionSessions(term, x.o).join(" / ")} &mdash; {tag(x)}
-                      </li>
-                    ))}
-                  </ul></details>
-                )}
-              </div>
-            ))}
-          </section>
-        ))
-      }
-      {
-        partial && (
-          <section class="h-panel" aria-labelledby="h-part-h">
-            <h3 id="h-part-h">The other {plural(rest.length, "clash", "clashes")} can be fixed on their own</h3>
-            <p>Leaving aside the {stuck.length === 1 ? "clash above that has no way out" : "clashes that have no way out"}, these moves would clear the rest. Auto-fix cannot apply them for you (it only applies a fix that clears everything), but you can make each one yourself:</p>
-            <ul class="h-list">
-              {partial.moves.map((m) => (
-                <li>
-                  <a href={courseHref(catalog, m.groupId)}>{groupLabel(catalog, m.groupId)}</a>: {catalog.options.get(m.fromOptionId ?? "")?.code ?? "not enrolled"} &rarr; {catalog.options.get(m.toOptionId ?? "")?.code ?? "dropped"}
-                  ({optionSessions(term, m.toOptionId ? catalog.options.get(m.toOptionId) : undefined).join(" / ")})
-                </li>
               ))}
-            </ul>
-          </section>
-        )
-      }
-      <p class="h-muted">
-        Note: when a class has only one time, the clash cannot be moved away inside this app. You may want to ask the course convenor whether an arrangement exists, or check whether lecture recordings are available. This page cannot tell you what is permitted.
-        You can also review your <a href="/preferences/">preferences</a>, though they do not change which timetables are possible.
-      </p>
-    </section>
+            </tbody>
+          </table>
+        </div>
+        <p>Preference score: {before.total} now, {after ? after.total : "n/a"} after (lower is better).</p>
+      </section>
+      <form method="post" action="/api/autofix" class="row">
+        <input type="hidden" name="basis" value={preview.basis} />
+        <button class="btn solid" type="submit">Apply {plural(r.moves.length, "move")}</button>
+        <span class="muted">You can undo it straight after.</span>
+      </form>
+    </div>
+  ) : (
+    <div class="stack">
+      <section class="block warn" aria-labelledby="af-h">
+        <h2 id="af-h">No fix clears every clash</h2>
+        <p>Auto-fix tried every set of moves{r.capped ? " it could" : ""} with the seats open right now.</p>
+      </section>
+      {clashes.map((c) => (
+        <section class="block" aria-label={`${groupLabel(catalog, c.groupA)} and ${groupLabel(catalog, c.groupB)}`}>
+          <h2>{groupLabel(catalog, c.groupA)} and {groupLabel(catalog, c.groupB)}</h2>
+          <p>Overlap: {overlapWords(term, c).join("; ")}.</p>
+          <ul class="bul">
+            <li>{why(c.groupA)}</li>
+            <li>{why(c.groupB)}</li>
+          </ul>
+        </section>
+      ))}
+      {partial && (
+        <section class="block" aria-labelledby="af-part">
+          <h2 id="af-part">The other {plural(rest.length, "clash", "clashes")} can be fixed</h2>
+          <ul class="bul">
+            {partial.moves.map((m) => (
+              <li>
+                <a href={courseHref(catalog, m.groupId)}>{groupLabel(catalog, m.groupId)}</a>: {optionCode(catalog, m.fromOptionId, "not enrolled")} → {optionCode(catalog, m.toOptionId, "dropped")}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <p class="muted">A class that runs once can’t move. Ask the convenor whether lectures are recorded.</p>
+    </div>
   )
 }

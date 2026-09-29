@@ -1,0 +1,52 @@
+---
+// Change a class, the friendly entry: every class you hold, in week order, each linking to its other times.
+import Icon from "../../components/Icon.astro";
+import Shell from "../../layouts/Shell.astro";
+import * as D from "../../lib/daybook";
+import { getViewState } from "../../lib/view";
+
+const view = getViewState(Astro.url);
+const { catalog, alloc, seats } = view;
+const rows = [...catalog.groups.values()]
+  .map((g) => {
+    const course = catalog.courses.get(g.courseId)!;
+    const held = alloc.get(g.id);
+    const o = held ? catalog.options.get(held) : undefined;
+    const slot = o ? D.primarySlot(o, g) : null;
+    const count = D.realOptions(g).filter((x) => x.id !== held).length;
+    return { g, course, slot, count, m: D.mobility(g.id, alloc, catalog, seats) };
+  })
+  .sort((a, b) => (a.slot?.day ?? 9) - (b.slot?.day ?? 9) || (a.slot?.start ?? 0) - (b.slot?.start ?? 0));
+const movable = rows.filter((r) => r.count > 0);
+const once = rows.filter((r) => r.count === 0);
+---
+
+<Shell title="Change a class" view={view}>
+  <div class="pagehead">
+    <h1>Change a class</h1>
+    <p>Which class do you want at another time?</p>
+  </div>
+  <ul class="classes">
+    {
+      movable.map((r) => (
+        <li>
+          <a href={`/course/${encodeURIComponent(r.course.code)}/?group=${encodeURIComponent(r.g.id)}`}>
+            <span class={`tag ${D.courseHue(catalog, r.course.id)}`}>{r.course.code}</span>
+            <span class="what">
+              <span class="t">{D.kindWord(r.g)}{r.slot ? `, ${D.slotWhen(r.slot)}` : ", not chosen yet"}</span>
+              <span class="s">{r.m.movable ? D.plural(r.count, "other time", "other times") : `Can’t move: ${r.m.why}`}</span>
+            </span>
+            <span class="go"><span class="go-t">{r.slot ? "Change" : "Choose"}</span><Icon name="arrow" /></span>
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+  {
+    once.length > 0 && (
+      <p class="lede" style="margin-top:20px">
+        Run once, so they can’t change: {once.map((r) => `${r.course.code} ${D.kindWord(r.g).toLowerCase()}`).join(", ")}.
+      </p>
+    )
+  }
+</Shell>

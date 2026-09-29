@@ -1,32 +1,37 @@
 ---
-// Shared shell (workstream F). Pages pass a title and provide their own single <h1> in the slot.
-// The Shell loads view state itself (draft banner, flash, enrolment sidebar); pages that already have it can pass `view`.
-import "../styles/shell.css";
-import "../styles/grid.css";
-import Sidebar from "../components/Sidebar.astro";
-import DraftBanner from "../components/DraftBanner.astro";
-import Flash from "../components/Flash.astro";
+// Shared Daybook shell. Pages pass a title and provide their own single <h1> in the slot. The Shell shows the draft
+// banner and the result of the last form POST (a toast with Undo where the change can be undone).
+import "../styles/app.css";
+import Icon from "../components/Icon.astro";
+import { backHere, resultFor } from "../lib/result";
 import { getViewState, type ViewState } from "../lib/view";
 
 interface Props {
   title: string;
   view?: ViewState;
-  /** Hide the enrolment sidebar (full-width pages). */
-  sidebar?: boolean;
+  description?: string;
 }
-const { title, view: given, sidebar = true } = Astro.props;
+const { title, view: given, description = "Your week at ANU, one day at a time: what is on, what clashes, and how to change a class." } = Astro.props;
 const view = given ?? getViewState(Astro.url);
 const path = Astro.url.pathname;
-const nav = [
-  ["/", "Home"],
-  ["/timetable/", "Timetable"],
+const result = resultFor(Astro.url, view.catalog);
+const main = [
+  ["/", "My week"],
+  ["/change/", "Change a class"],
+  ["/swap/", "Swap a time"],
+] as const;
+const more = [
+  ["/timetable/", "List of classes"],
   ["/grid/", "Grid"],
-  ["/draft/", "Draft"],
+  ["/draft/", view.draft ? "Draft (open)" : "Draft"],
   ["/history/", "History"],
   ["/auto-fix/", "Auto-fix"],
   ["/preferences/", "Preferences"],
+  ["/readme/", "About this app"],
 ] as const;
-const current = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+const isCurrent = (href: string) =>
+  href === "/" ? path === "/" : href === "/change/" ? path.startsWith("/change") || path.startsWith("/course") : path.startsWith(href);
+const moreCurrent = more.some(([h]) => isCurrent(h));
 ---
 
 <!doctype html>
@@ -34,41 +39,77 @@ const current = (href: string) => (href === "/" ? path === "/" : path.startsWith
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title} | MyTimetable 2026</title>
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content="#f2ecdf" />
+    <meta name="description" content={description} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>{title} · Daybook</title>
+    <script is:inline>document.documentElement.classList.add("js");</script>
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to main content</a>
-    <header class="site-header">
-      <div class="brand-strip">
-        <a class="brand" href="/">MyTimetable <span>2026</span></a>
-        <span class="brand-term">{view.term?.name}</span>
-      </div>
-      <nav aria-label="site">
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="top">
+      <a class="brand" href="/"><Icon name="mark" />Daybook</a>
+      <nav class="nav" aria-label="Main">
         <ul>
           {
-            nav.map(([href, label]) => (
+            main.map(([href, label]) => (
               <li>
-                <a href={href} aria-current={current(href) ? "page" : undefined}>
-                  {label}
-                  {href === "/draft/" && view.draft ? <span class="nav-tag"> (open)</span> : null}
-                </a>
+                <a href={href} aria-current={isCurrent(href) ? "page" : undefined}>{label}</a>
               </li>
             ))
           }
+          <li class:list={{ "is-current": moreCurrent }}>
+            <details class="navmore" data-navmore>
+              <summary>More<Icon name="down" /></summary>
+              <ul class="more-menu">
+                {
+                  more.map(([href, label], i) => (
+                    <>
+                      {i === more.length - 1 && <li class="sep" aria-hidden="true" />}
+                      <li>
+                        <a href={href} aria-current={isCurrent(href) ? "page" : undefined}>{label}</a>
+                      </li>
+                    </>
+                  ))
+                }
+              </ul>
+            </details>
+          </li>
         </ul>
       </nav>
     </header>
-    <DraftBanner draft={view.draft} />
-    <div class:list={["layout", { "no-sidebar": !sidebar }]}>
-      {sidebar && <Sidebar view={view} />}
-      <main id="main" tabindex="-1">
-        <Flash msg={view.msg} error={view.error} detail={view.detail} />
-        <slot />
-      </main>
-    </div>
-    <footer class="site-footer">
-      <a href="/readme/">About this app</a>
-      <a href="/api/timetable.ics">Download timetable (.ics)</a>
-    </footer>
+    {
+      view.draft && (
+        <div class="draft-banner" role="region" aria-label="Draft mode">
+          <div>
+            <p>You’re editing a draft. Your real timetable changes only when you apply it.</p>
+            <a href="/draft/">Review draft</a>
+          </div>
+        </div>
+      )
+    }
+    <main id="main" class="wrap" tabindex="-1">
+      {
+        result && (
+          <div class:list={["toast", { err: result.kind === "error" }]} role={result.kind === "error" ? "alert" : "status"} tabindex="-1" data-result>
+            {result.kind === "error" ? <Icon name="alert" class="ck" /> : <svg class="ck i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>}
+            <p>{result.text}</p>
+            {result.undo && (
+              <form method="post" action={result.undo.action}>
+                {Object.entries(result.undo.fields).map(([k, v]) => <input type="hidden" name={k} value={v} />)}
+                <input type="hidden" name="next" value={backHere(Astro.url)} />
+                <button type="submit"><Icon name="undo" />{result.undo.label}</button>
+              </form>
+            )}
+            <button type="button" class="x" data-dismiss hidden aria-label="Dismiss"><Icon name="x" /></button>
+          </div>
+        )
+      }
+      <slot />
+    </main>
+    <script>
+      import "../scripts/daybook.ts";
+    </script>
   </body>
 </html>

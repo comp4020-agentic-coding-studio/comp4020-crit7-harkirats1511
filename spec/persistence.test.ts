@@ -70,7 +70,8 @@ describe("core flow persists across a reload", () => {
     expect(page.status).toBe(200);
     const html = await page.text();
     expect(html).toContain("FINM1001");
-    expect(html).toMatch(/16:00/);
+    // times are shown 12-hour: TutA 07 is Wed 16:00-17:00
+    expect(html).toContain("4–5pm");
     // restore at once: COMP3900 TutA 06 (clash-flow) would genuinely clash with a held Wed 16:00 tutorial
     await post("/api/select", { optionId: "finm1001-tuta-03" });
   });

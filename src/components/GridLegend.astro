@@ -1,11 +1,11 @@
 ---
 import GridIcon from "./GridIcon.astro";
 const items = [
-  { kind: "yours", tag: "Yours", text: "The option you hold for the group (solid black border)." },
-  { kind: "option", tag: "Option", text: "A candidate option of the focused group (double border)." },
-  { kind: "collides", tag: "Collides", text: "One of your other classes that overlaps a candidate this week (thick red-brown border)." },
-  { kind: "ghost", tag: "Ghost", text: "Your other classes, shown faintly for context only (thin dotted outline)." },
-  { kind: "dropin", tag: "Drop-in", text: "Drop-in session: dashed border, never clashes." },
+  { kind: "yours", tag: "Yours", text: "The time you hold (solid border)." },
+  { kind: "option", tag: "Option", text: "Another time for the class (double border)." },
+  { kind: "collides", tag: "Collides", text: "A class that overlaps (thick red border)." },
+  { kind: "ghost", tag: "Ghost", text: "Your other classes, for context (dotted)." },
+  { kind: "dropin", tag: "Drop-in", text: "Optional drop-in, never clashes (dashed)." },
 ] as const;
 ---
 
@@ -23,5 +23,5 @@ const items = [
       ))
     }
   </ul>
-  <p class="grid-note">Tags "Full" and "Overflow" are added in text when an option has no seats left or is a virtual overflow copy.</p>
+  <p class="grid-note">“Full” is written on times with no seats left.</p>
 </section>

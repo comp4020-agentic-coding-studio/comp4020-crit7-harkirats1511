@@ -1,4 +1,5 @@
 ---
+import "../../styles/grid.css";
 import Shell from "../../layouts/Shell.astro";
 import GridDay from "../../components/GridDay.astro";
 import GridLegend from "../../components/GridLegend.astro";
@@ -6,7 +7,8 @@ import GridIcon from "../../components/GridIcon.astro";
 import WeekScrubber from "../../components/WeekScrubber.astro";
 import { getViewState, DAY_NAMES, fmtRange } from "../../lib/view";
 import { sessionOverlap } from "../../lib/engine/clash";
-import { formatWeeks, weekToDate, weekBit } from "../../lib/engine/weeks";
+import { weekToDate, weekBit } from "../../lib/engine/weeks";
+import { className, hourLabel, kindWord, roomName, weeksWords } from "../../lib/daybook";
 import { assignLanes, daysBeyond, freeLaneRun, dayTabs, fitAxis, maxLanes, minBoardPx, pickDefaultDay, type GridBlock } from "../../lib/grid-layout";
 import type { Group, Option, Session } from "../../lib/engine/types";
 
@@ -84,11 +86,12 @@ if (!unknownFocus) {
     notRunning = focusOpts
       .filter((o) => !o.sessions.some(runs))
       .map((o) => ({
-        text: `${g2(focusGroup, o)} (${formatWeeks(o.sessions.reduce((m, s) => m | s.weeks, 0), term.breakAfterWeek) || "no teaching weeks"})`,
+        text: `${g2(focusGroup, o)} (${weeksWords(o.sessions.reduce((m, s) => m | s.weeks, 0))})`,
       }));
   }
-  function g2(g: Group, o: Option) {
-    return `${g.name} ${o.code}`;
+  function g2(_g: Group, o: Option) {
+    const s = o.sessions.find((x) => !x.exempt) ?? o.sessions[0];
+    return s ? `${DAY_NAMES[s.day]} ${fmtRange(s)}` : o.code;
   }
 
   const overlaps = (a: Item, b: Item) => !exempt(a) && !exempt(b) && sessionOverlap(a.session, b.session) !== null;
@@ -96,7 +99,7 @@ if (!unknownFocus) {
   const seatsText = (o: Option, yours: boolean) => {
     if (o.capacity === null) return "Seats not published";
     const left = Math.max(0, o.capacity - (seats.get(o.id) ?? 0));
-    return yours ? `${left} seats left (you hold one)` : left === 0 ? "Full, 0 seats left" : `${left} seats left`;
+    return yours ? "Yours" : left === 0 ? "Full" : left === 1 ? "1 seat left" : `${left} seats left`;
   };
 
   const make = (it: Item, kind: GridBlock["kind"], notes: string[]): GridBlock => {
@@ -118,11 +121,11 @@ if (!unknownFocus) {
       extraTags: extra,
       dropIn,
       courseCode: it.courseCode,
-      className: `${it.group.name} ${it.option.code}${it.option.sessions.length > 1 ? ` ${s.part}` : ""}`,
+      className: `${kindWord(it.group)}${dropIn ? " (drop-in)" : ""}`,
       when: `${DAY_NAMES[s.day]} ${fmtRange(s)}`,
-      room: s.location ?? "Room not published",
+      room: roomName(s.location) ?? "Room not published",
       seats: seatsText(it.option, yours),
-      weeks: formatWeeks(s.weeks, term.breakAfterWeek),
+      weeks: weeksWords(s.weeks),
       notes,
       href: kind === "ghost" ? null : `/course/${encodeURIComponent(it.courseCode)}/?pick=${encodeURIComponent(it.option.id)}`,
     };
@@ -134,7 +137,7 @@ if (!unknownFocus) {
     for (const c of cands) {
       const hits = heldOthers.filter((h) => overlaps(c, h));
       const notes = hits.length
-        ? [`Clashes with ${[...new Set(hits.map((h) => `${h.courseCode} ${h.group.name} ${h.option.code}`))].join(", ")}`]
+        ? [`Clashes with your ${[...new Set(hits.map((h) => className(catalog, h.group.id)))].join(", ")}`]
         : [];
       const kind = c.held ? "yours" : "option";
       all.push(make(c, kind, notes));
@@ -152,7 +155,7 @@ if (!unknownFocus) {
     for (const h of held) {
       const hits = held.filter((o) => o !== h && o.option.id !== h.option.id && overlaps(h, o));
       if (hits.length) {
-        const names = [...new Set(hits.map((o) => `${o.courseCode} ${o.group.name} ${o.option.code}`))];
+        const names = [...new Set(hits.map((o) => className(catalog, o.group.id)))];
         all.push(make(h, "collides", [`Collides with ${names.join(", ")}`]));
       } else all.push(make(h, "yours", []));
     }
@@ -209,8 +212,8 @@ const dayDate = (d: number) =>
   });
 ---
 
-<Shell sidebar={false} title={focusGroup ? `Grid: ${focusCourse?.code} ${focusGroup.name}` : "Grid"}>
-  <h1>Grid{focusGroup ? `: ${focusCourse?.code} ${focusGroup.name}` : ""}</h1>
+<Shell title={focusGroup ? `Grid: ${focusCourse?.code} ${kindWord(focusGroup).toLowerCase()}` : "Grid"}>
+  <h1>Grid{focusGroup ? `: ${focusCourse?.code} ${kindWord(focusGroup).toLowerCase()}` : ""}</h1>
 
   {
     unknownFocus ? (
@@ -226,12 +229,8 @@ const dayDate = (d: number) =>
     ) : (
       <>
         <p class="grid-lede">
-          {focusGroup
-            ? `Every option of ${focusCourse?.code} ${focusGroup.name}, the class you hold, and only the classes that collide with them.`
-            : "Your whole timetable for the week, clashes emphasised."}
-          {" "}<a href={toggleHref}>{showAll ? "Show only relevant" : "Show everything"}</a>
-          {focusGroup && <> · <a href={`/course/${encodeURIComponent(focusCourse?.code ?? "")}/`}>Back to course</a></>}
-          {!focusGroup && <> · Add <code>?focus=group-id</code> to focus one class</>}
+          {focusGroup ? `Every time of your ${focusCourse?.code} ${kindWord(focusGroup).toLowerCase()}, and the classes they overlap.` : "Your whole week, clashes marked."}
+          {focusGroup && <>{" "}<a href={toggleHref}>{showAll ? "Show only overlaps" : "Show everything"}</a></>}
         </p>
 
         <WeekScrubber term={term} week={week} params={baseParams} activeMask={focusGroup ? activeMask : undefined} />
@@ -261,7 +260,7 @@ const dayDate = (d: number) =>
                   <div class="gday-head">&nbsp;</div>
                   <div class="gaxis-body" style={`height:${(axis.endHour - axis.startHour) * 60 * PPM}px`}>
                     {Array.from({ length: axis.endHour - axis.startHour + 1 }, (_, i) => axis.startHour + i).map((h) => (
-                      <span style={`top:${(h - axis.startHour) * 60 * PPM}px`}>{String(h).padStart(2, "0")}:00</span>
+                      <span style={`top:${(h - axis.startHour) * 60 * PPM}px`}>{hourLabel(h)}</span>
                     ))}
                   </div>
                 </div>

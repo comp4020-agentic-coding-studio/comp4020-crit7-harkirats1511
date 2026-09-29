@@ -1,48 +1,46 @@
 ---
-import Shell from "../../layouts/Shell.astro";
 import PrefsForm from "../../components/PrefsForm.astro";
-import "../../styles/pages.css";
-import { scorePrefs } from "../../lib/engine/prefs";
-import { getViewState } from "../../lib/view";
 import { plural } from "../../components/h-format";
+import Shell from "../../layouts/Shell.astro";
+import { scorePrefs } from "../../lib/engine/prefs";
+import { twelveHour } from "../../lib/daybook";
+import { getViewState } from "../../lib/view";
 
 const v = getViewState(Astro.url);
 const score = scorePrefs(v.realAlloc, v.catalog, v.prefs);
 const KIND: Record<string, string> = { dayOff: "Day off", early: "Early start", late: "Late finish", gap: "Long gap", walk: "Building change" };
-const groups = Object.keys(KIND)
-  .map((k) => ({ k, items: score.penalties.filter((p) => p.kind === k) }))
-  .filter((g) => g.items.length > 0);
 ---
 
 <Shell title="Preferences" view={v}>
-  <div class="h-page">
+  <div class="pagehead">
     <h1>Preferences</h1>
-    <p class="h-lede">Tell the app what a good timetable looks like for you. Preferences score your timetable (lower is better) and break ties when auto-fix has more than one way to clear a clash. They never allow a clash.</p>
+    <p>What a good week looks like to you. Auto-fix uses this to choose between fixes; it never allows a clash.</p>
+  </div>
+  <div class="stack">
     <PrefsForm prefs={v.prefs} />
-
-    <section class="h-panel" aria-labelledby="h-score-h" style="margin-top:16px">
-      <h2 id="h-score-h">Your current timetable scores {score.total}</h2>
+    <section class="block" aria-labelledby="p-score">
+      <h2 id="p-score">Your timetable scores {score.total}</h2>
       {
         score.penalties.length === 0 ? (
-          <p><span aria-hidden="true">&#x2713; </span>No penalties: your current timetable meets every preference you have set.</p>
+          <p>It meets every preference you set.</p>
         ) : (
           <>
-            <p>{plural(score.penalties.length, "penalty", "penalties")} add up to {score.total}. Each line says why.</p>
-            <div class="h-scroll">
-              <table class="h-table">
+            <p>{plural(score.penalties.length, "thing adds", "things add")} points (lower is better).</p>
+            <div class="table-wrap" style="margin-top:10px">
+              <table class="data">
+                <caption class="sr">Points and why</caption>
                 <thead><tr><th scope="col">Kind</th><th scope="col">Points</th><th scope="col">Why</th></tr></thead>
                 <tbody>
-                  {groups.flatMap((g) => g.items.map((p) => (
-                    <tr><th scope="row">{KIND[g.k]}</th><td class="h-mono">+{p.points}</td><td>{p.detail}</td></tr>
-                  )))}
+                  {score.penalties.map((p) => (
+                    <tr><th scope="row">{KIND[p.kind]}</th><td>+{p.points}</td><td>{twelveHour(p.detail)}</td></tr>
+                  ))}
                 </tbody>
-                <tfoot><tr><th scope="row">Total</th><td class="h-mono"><strong>{score.total}</strong></td><td></td></tr></tfoot>
               </table>
             </div>
           </>
         )
       }
-      {v.draft && <p class="h-muted">Scored on your real timetable, not the open draft.</p>}
+      {v.draft && <p class="muted">Scored on your real timetable, not the draft.</p>}
     </section>
   </div>
 </Shell>

@@ -1,6 +1,12 @@
 ---
-import ActionItems from "../components/ActionItems.astro";
+import DayStrip from "../components/DayStrip.astro";
+import Icon from "../components/Icon.astro";
+import Timeline from "../components/Timeline.astro";
 import Shell from "../layouts/Shell.astro";
+import * as D from "../lib/daybook";
+import { weekToDate } from "../lib/engine/weeks";
+import type { Day } from "../lib/engine/types";
+import { DEFAULT_STUDENT_ID, loadStudentName } from "../lib/services/alloc";
 import { getViewState } from "../lib/view";
 
 // Must stay SSR (never prerender). Deploy CI POSTs to `/`: a same-origin POST must not 403 and a cross-origin
@@ -9,11 +15,206 @@ if (Astro.request.method === "POST") {
   return Astro.redirect("/", 303);
 }
 const view = getViewState(Astro.url);
+const { catalog, term, alloc, seats, draft } = view;
+const q = Astro.url.searchParams;
+
+// Which week and day: the real teaching week for today (Canberra time); ?week= and ?day= move around it.
+const now = D.nowInCanberra();
+const wv = D.weekView(term, now);
+const asked = Number(q.get("week"));
+const week = Number.isInteger(asked) && asked >= 1 && asked <= term.teachingWeeks ? asked : wv.week;
+const thisWeek = week === wv.week;
+const today = thisWeek ? wv.today : null;
+const dates = [0, 1, 2, 3, 4, 5, 6].map((d) => weekToDate(term.startDate, term.breakAfterWeek, week, d as Day));
+const events = D.weekEvents(alloc, catalog, week);
+const days = [0, 1, 2, 3, 4, ...[5, 6].filter((d) => events.some((e) => e.day === d))] as Day[];
+const day: Day = D.parseDay(q.get("day")) ?? today ?? 0;
+const clashes = D.eventClashes(events);
+const clashDays = new Set(clashes.map((c) => c.day));
+const problem = D.weekProblem(events, alloc, catalog, seats);
+const weekParam = q.get("week") && !thisWeek ? `&week=${week}` : "";
+const dayHref = (d: number) => `/?day=${D.DAY_KEYS[d]}${weekParam}`;
+
+// Greeting in the student's voice.
+const first = loadStudentName(DEFAULT_STUDENT_ID).split(/\s+/)[0] || "there";
+const hello = now.min < 5 * 60 ? "Evening" : now.min < 12 * 60 ? "Morning" : now.min < 17 * 60 ? "Afternoon" : "Evening";
+const todo = problem ? (problem.count === 1 ? "One thing to sort out." : `${problem.count} things to sort out.`) : "Nothing to sort out.";
+const sub = `${today !== null ? `${D.DAY_LONG[today]} ${D.dateLabel(dates[today])}` : `${D.dateLabel(dates[0])} to ${D.dateLabel(dates[4])}`} · Week ${week}${thisWeek && wv.note ? ` · ${wv.note}` : ""}`;
+
+// Next up: the next class from now within this week.
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+const solid = events.filter((e) => !e.optional);
+let next: { e: D.DayEvent; when: string } | null = null;
+for (const e of solid) {
+  if (today !== null && e.day < today) continue;
+  if (today !== null && e.day === today) {
+    if (e.end <= now.min) continue;
+    const mins = e.start - now.min;
+    next = { e, when: mins <= 0 ? `now, until ${D.time12(e.end)}` : mins <= 60 ? `in ${mins} min` : `at ${D.time12(e.start)}` };
+  } else {
+    next = { e, when: today !== null && e.day === today + 1 ? `tomorrow at ${D.time12(e.start)}` : `${D.DAY_LONG[e.day]} at ${D.time12(e.start)}` };
+  }
+  break;
+}
+
+// The one problem card.
+const c = problem?.clash ?? null;
+const sameKind = c && c.a.kind === c.b.kind;
+const pbTitle = c ? (sameKind ? `Your ${D.DAY_LONG[c.day]} ${c.a.kind.toLowerCase()}s overlap` : `Your ${D.DAY_LONG[c.day]} ${c.a.kind.toLowerCase()} and ${c.b.kind.toLowerCase()} overlap`) : "";
+const runsOnce = c ? [c.a, c.b].every((e) => D.mobility(e.groupId, alloc, catalog, seats).why === "it runs once") : false;
+const fixCourse = problem?.fixGroupId ? catalog.courses.get(catalog.groups.get(problem.fixGroupId)!.courseId) : null;
+const email = c
+  ? `Hi, my ${c.a.course.code} and ${c.b.course.code} ${sameKind ? `${c.a.kind.toLowerCase()}s` : "classes"} overlap on ${D.DAY_LONG[c.day]}s, ${D.range12(c.from, c.to)}. Are they recorded? Thanks, ${first}`
+  : "";
+
+// This week at a glance.
+const lo = Math.floor(Math.min(9 * 60, ...events.map((e) => e.start)) / 60);
+const hi = Math.ceil(Math.max(17 * 60, ...events.map((e) => e.tailEnd ?? e.end)) / 60);
+const glance = days.map((d) => {
+  const evs = events.filter((e) => e.day === d);
+  const bars = D.layoutLanes(evs.map((e) => ({ item: e, a: e.start, b: e.end })));
+  const s = evs.filter((e) => !e.optional);
+  const span = s.length ? D.range12(Math.min(...s.map((e) => e.start)), Math.max(...s.map((e) => e.end))) : "Free";
+  const n = clashes.filter((x) => x.day === d).length;
+  return { d, bars, span, n, count: s.length };
+});
 ---
 
-<Shell title="Home" view={view}>
-  <div class="page-title"><h1>Home: what needs your attention</h1></div>
-  <div class="page-body">
-    <ActionItems view={view} />
+<Shell title="My week" view={view}>
+  <div class="page">
+    <div class="main">
+      <div class="g-greet">
+        <h1 class="greet">{hello}, {first}. {todo}</h1>
+        <p class="greet-sub">{sub}</p>
+      </div>
+      <section class="next g-next" aria-label="Next up">
+        <span class="ic"><Icon name="clock" /></span>
+        {
+          next ? (
+            <p>
+              <b>{cap(D.eventName(next.e))}</b> {next.when}
+              {next.e.room && <><br /><span class="sub">{next.e.room}</span></>}
+            </p>
+          ) : (
+            <p>Nothing else on this week.</p>
+          )
+        }
+      </section>
+      <DayStrip
+        class="g-strip"
+        label="Days this week"
+        days={days.map((d) => ({ day: d, date: dates[d], href: dayHref(d), current: d === day, today: d === today, mark: clashDays.has(d) ? "clash" : null }))}
+      />
+      {
+        days.map((d) => {
+          const evs = events.filter((e) => e.day === d);
+          const n = evs.filter((e) => !e.optional).length;
+          return (
+            <section class="card tlcard g-tl" id={`day-${D.DAY_KEYS[d]}`} aria-labelledby={`tl-h-${d}`} data-day-panel={d} hidden={d !== day}>
+              <div class="tl-head">
+                <h2 id={`tl-h-${d}`}>{D.DAY_LONG[d]}</h2>
+                <span class="sub">{d === today ? "Today" : D.dateLabel(dates[d])} · {n === 0 ? "no classes" : D.plural(n, "class", "classes")}</span>
+              </div>
+              <Timeline events={evs} dayLong={D.DAY_LONG[d]} nowMin={d === today ? now.min : null} />
+            </section>
+          );
+        })
+      }
+      <p class="ics g-tl">
+        <a class="btn quiet" href="/api/timetable.ics" download><Icon name="cal" />Add to my calendar (.ics)</a>
+      </p>
+    </div>
+    <div class="rail">
+      {
+        c ? (
+          <section class="card problem g-problem" aria-labelledby="pb-h" id="problem">
+            <div class="pb-head">
+              <span class="pb-ico"><Icon name="alert" /></span>
+              <h2 id="pb-h">{pbTitle}</h2>
+            </div>
+            {problem!.fixGroupId && fixCourse ? (
+              <>
+                <p class="lead">
+                  {c.a.course.code} and {c.b.course.code} overlap {D.range12(c.from, c.to)}. Your {D.className(catalog, problem!.fixGroupId)} has another time that fits.
+                </p>
+                <p class="row">
+                  <a class="btn solid" href={`/course/${fixCourse.code}/?group=${encodeURIComponent(problem!.fixGroupId)}`}>Fix this clash</a>
+                </p>
+              </>
+            ) : (
+              <>
+                <p class="lead">
+                  {c.a.course.code} and {c.b.course.code} overlap <span class="nowrap">{D.range12(c.from, c.to)}</span>.{" "}
+                  {runsOnce ? "Each runs once, so this can’t be fixed." : "Neither can move to a free time, so this can’t be fixed now."}
+                </p>
+                <ul class="opts">
+                  <li>
+                    <details class="optx">
+                      <summary class="opt"><Icon name="keep" />Keep both</summary>
+                      <div class="optx-body"><p>Nothing changes. You stay in both and catch up on the hour you miss.</p></div>
+                    </details>
+                  </li>
+                  <li>
+                    <details class="optx">
+                      <summary class="opt"><Icon name="drop" />Drop one</summary>
+                      <div class="optx-body">
+                        <p>Which one? You can undo straight after.</p>
+                        <div class="row">
+                          {[c.a, c.b].map((e) => (
+                            <form method="post" action="/api/drop">
+                              <input type="hidden" name="groupId" value={e.groupId} />
+                              {draft && <input type="hidden" name="draftId" value={draft.id} />}
+                              <input type="hidden" name="next" value={`/?day=${D.DAY_KEYS[c.day]}`} />
+                              <button class="btn danger small" type="submit">Drop {D.eventName(e)}</button>
+                            </form>
+                          ))}
+                        </div>
+                      </div>
+                    </details>
+                  </li>
+                  <li>
+                    <button type="button" class="opt off" disabled>
+                      <Icon name="play" />
+                      <span>Watch the recording<span class="sub">Not linked here yet</span></span>
+                    </button>
+                  </li>
+                </ul>
+                <div class="emailbox">
+                  <p class="eyebrow">Email the convenor</p>
+                  <p class="txt" id="email-text">{email}</p>
+                  <button type="button" class="btn" data-copy="email-text" hidden><Icon name="copy" />Copy email</button>
+                </div>
+              </>
+            )}
+            {problem!.count > 1 && (
+              <p class="note"><Icon name="info" /><span>{D.plural(problem!.count - 1, "more clash", "more clashes")} this week. <a href="/timetable/">See the list</a>.</span></p>
+            )}
+          </section>
+        ) : (
+          <p class="calm card g-problem"><Icon name="check" /><span>Nothing clashes this week.</span></p>
+        )
+      }
+      <section class="glance g-glance" aria-labelledby="gl-h">
+        <h2 id="gl-h">This week</h2>
+        <ul class="mini" style={`--days:${days.length}`}>
+          {glance.map((g) => (
+            <li>
+              <a class="mday" href={dayHref(g.d)} data-day={g.d} aria-current={g.d === day ? "true" : undefined}>
+                <span class="mtrack" aria-hidden="true" style={`--span:${hi - lo}`}>
+                  {g.bars.map((b) => (
+                    <span class:list={["mbar", b.item.hue, { o: b.item.optional }]} style={`--from:${(b.a - lo * 60) / 60};--len:${(b.b - b.a) / 60};--lane:${b.lane};--lanes:${b.lanes}`} />
+                  ))}
+                </span>
+                <span class="mlab">
+                  {D.DAY_SHORT[g.d]} {dates[g.d].getUTCDate()}
+                  <small>{g.span}</small>
+                  {g.n > 0 && <small class="cl"><Icon name="alert" />{D.plural(g.n, "clash", "clashes")}</small>}
+                </span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
+    </div>
   </div>
 </Shell>

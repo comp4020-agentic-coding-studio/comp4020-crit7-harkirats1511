@@ -1,0 +1,49 @@
+/* Daybook tokens (ported from docs/design/options/daybook/tokens.css). Contrast ratios are measured with the
+   WCAG relative-luminance formula (scripts in PROCESS.md), not guessed. */
+:root {
+  color-scheme: light;
+  /* surfaces */
+  --page: #f2ecdf; /* sand */
+  --surface: #faf6ec; /* oat */
+  --inset: #efe8d8;
+  --line: #dcd2bc; /* hairline */
+  --line-strong: #8f8468; /* 3.3:1 on oat: visible borders on controls */
+  /* text */
+  --ink: #22251f; /* 14.4:1 on oat */
+  --ink-2: #55503f; /* 7.5:1 on oat */
+  /* the single strong accent: deep teal */
+  --primary: #0e4f4f; /* white on it 9.3:1 */
+  --primary-tint: #dcebe6;
+  --primary-hover: #0a3e3e;
+  --focus: #0e4f4f;
+  /* clash: the only red */
+  --clash: #a32a1b; /* 6.7:1 on oat */
+  --clash-tint: #f6ddd5;
+  /* calm ochre for cautions, never red */
+  --caution: #7a5200;
+  /* four muted course hues: fg for stems and tag text, tint for tag fill */
+  --c1: #3e5a75;
+  --c1-tint: #dee5eb;
+  --c2: #6b5320;
+  --c2-tint: #efe4c4;
+  --c3: #6e4360;
+  --c3-tint: #ecdde6;
+  --c4: #4a6035;
+  --c4-tint: #e0e7d3;
+  /* type: system stacks only (no web fonts are loaded) */
+  --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  /* shape */
+  --r: 14px;
+  --r-sm: 10px;
+  /* motion */
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --spring: cubic-bezier(0.34, 1.36, 0.64, 1);
+  /* timeline pixels per hour */
+  --hr: 72px;
+}
+@media (max-width: 599px) {
+  :root {
+    --hr: 84px;
+  }
+}

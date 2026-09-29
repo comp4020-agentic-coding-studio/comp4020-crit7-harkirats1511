@@ -1,7 +1,7 @@
 // Shared per-request view state for every page (workstream F). Pages and the Shell call this once and
 // pass the result down; it only reads (services in alloc.ts), never writes.
 import { effectiveAlloc } from "./engine/draft";
-import { formatWeeks } from "./engine/weeks";
+import { range12, time12, weeksWords } from "./daybook";
 import type { Allocation, Catalog, ClashDetail, Course, Group, Option, Prefs, Session, SeatsUsed, Term } from "./engine/types";
 import {
   DEFAULT_STUDENT_ID,
@@ -58,14 +58,14 @@ export function getViewState(url: URL): ViewState {
 
 export const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"] as const;
 
+/** 12-hour everywhere: "2pm", "10:30am". */
 export function fmtTime(min: number): string {
-  const h = Math.floor(min / 60);
-  const m = min % 60;
-  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  return time12(min);
 }
 
+/** "2–3:30pm" */
 export function fmtRange(s: Pick<Session, "startMin" | "endMin">): string {
-  return `${fmtTime(s.startMin)}-${fmtTime(s.endMin)}`;
+  return range12(s.startMin, s.endMin);
 }
 
 export function optionLabel(group: Group, option: Option): string {
@@ -146,9 +146,7 @@ export function courseOfOption(catalog: Catalog, optionId: string): Course | nul
   return (g && catalog.courses.get(g.courseId)) || null;
 }
 
-/** "Wed 10:30-12:00, Wks 2-6, 7-12, 60 min" for each overlapping session pair, joined by "; ". */
-export function clashWhen(c: ClashDetail, term: Term): string {
-  return c.overlaps
-    .map((o) => `${DAY_NAMES[o.day]} ${fmtTime(o.fromMin)}-${fmtTime(o.toMin)}, ${formatWeeks(o.weeks, term.breakAfterWeek)}, ${o.minutes} min`)
-    .join("; ");
+/** "Wed 11am–12pm, weeks 2–12" for each overlapping session pair, joined by "; ". */
+export function clashWhen(c: ClashDetail, _term?: Term): string {
+  return c.overlaps.map((o) => `${DAY_NAMES[o.day]} ${range12(o.fromMin, o.toMin)}, ${weeksWords(o.weeks)}`).join("; ");
 }

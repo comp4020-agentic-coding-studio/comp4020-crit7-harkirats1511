@@ -1,21 +1,20 @@
 ---
-import Shell from "../../layouts/Shell.astro";
 import AutofixPlan from "../../components/AutofixPlan.astro";
-import "../../styles/pages.css";
-import { getViewState } from "../../lib/view";
+import Shell from "../../layouts/Shell.astro";
 import { DEFAULT_STUDENT_ID, autofixPreview } from "../../lib/services/alloc";
+import { getViewState } from "../../lib/view";
 
 const v = getViewState(Astro.url);
 const preview = autofixPreview(DEFAULT_STUDENT_ID);
 ---
 
 <Shell title="Auto-fix" view={v}>
-  <div class="h-page">
+  <div class="pagehead">
     <h1>Auto-fix</h1>
-    <p class="h-lede">
-      Looks for the fewest changes to your real timetable that remove every clash. It only moves classes to options that have seats and do not clash together.
-      {v.draft && " A draft is open; auto-fix looks at your real timetable, not the draft."}
+    <p>
+      The fewest changes that clear every clash, using only times with seats.
+      {v.draft && " It looks at your real timetable, not the draft."}
     </p>
-    <AutofixPlan preview={preview} catalog={v.catalog} term={v.term} real={v.realAlloc} seats={v.seats} prefs={v.prefs} />
   </div>
+  <AutofixPlan preview={preview} catalog={v.catalog} term={v.term} real={v.realAlloc} seats={v.seats} prefs={v.prefs} />
 </Shell>

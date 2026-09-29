@@ -1,0 +1,39 @@
+---
+// Mon-Fri day chips. They are plain links (?day=), so the page works without JavaScript; with it, the script
+// switches the day in place and slides the teal pill.
+import { DAY_LONG, DAY_SHORT } from "../lib/daybook";
+
+export interface StripDay {
+  day: number;
+  date: Date;
+  href: string;
+  current: boolean;
+  today: boolean;
+  mark: "clash" | "fit" | null;
+}
+interface Props {
+  days: StripDay[];
+  label: string;
+  class?: string;
+}
+const { days, label, class: cls = "" } = Astro.props;
+---
+
+<nav class={`strip ${cls}`.trim()} aria-label={label} data-strip style={`--days:${days.length}`}>
+  {
+    days.map((d) => (
+      <a class="day" href={d.href} data-day={d.day} aria-current={d.current ? "true" : undefined}>
+        <span class="dn" aria-hidden="true">{DAY_SHORT[d.day]}</span>
+        <span class="dd" aria-hidden="true">{d.date.getUTCDate()}</span>
+        {d.mark === "clash" && <span class="mk" aria-hidden="true" />}
+        {d.mark === "fit" && <span class="fit" aria-hidden="true" />}
+        {d.today && <span class="today" aria-hidden="true" />}
+        <span class="sr">
+          {DAY_LONG[d.day]} {d.date.getUTCDate()}
+          {d.today ? ", today" : ""}
+          {d.mark === "clash" ? ", has a clash" : d.mark === "fit" ? ", has a time that fits" : ""}
+        </span>
+      </a>
+    ))
+  }
+</nav>

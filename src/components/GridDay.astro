@@ -49,7 +49,7 @@ const iconKind = (b: GridBlock) => (b.dropIn ? "dropin" : b.kind);
         ].join(". ");
         const extras = b.dropIn && detail === "compact" ? b.extraTags.map((t) => (t.startsWith("Drop-in") ? "Drop-in" : t)) : b.extraTags;
         return (
-          <Tag class={cls} style={style} href={b.href ?? undefined} title={all} aria-label={b.href ? all : undefined}>
+          <Tag class={cls} style={style} href={b.href ?? undefined} aria-label={b.href ? all : undefined}>
             <span class="gblk-head">
               <GridIcon kind={iconKind(b)} />
               <span class="gblk-tag">{b.tag}</span>

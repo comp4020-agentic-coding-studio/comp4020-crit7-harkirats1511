@@ -1,0 +1,297 @@
+---
+// Change a class: the held time as "Now", every other real time as a row and as a ghost on the day timeline and the
+// week glance. Legal = seats left + Preview; illegal = muted with the engine's reason. Preview (?pick=) is step one,
+// the confirm form is step two, so nothing moves on one click. Works without JavaScript; the script adds the sheet.
+import { resolveClash } from "../lib/engine/resolve";
+import type { Course, Day } from "../lib/engine/types";
+import { weekToDate } from "../lib/engine/weeks";
+import * as D from "../lib/daybook";
+import type { ViewState } from "../lib/view";
+import DayStrip from "./DayStrip.astro";
+import Icon from "./Icon.astro";
+import Timeline, { type Ghost } from "./Timeline.astro";
+
+interface Props {
+  view: ViewState;
+  course: Course;
+  groupId: string;
+  pickId: string | null;
+}
+const { view, course, groupId, pickId } = Astro.props;
+const { catalog, term, alloc, seats, draft } = view;
+const group = catalog.groups.get(groupId)!;
+const kind = D.kindWord(group).toLowerCase();
+const hue = D.courseHue(catalog, course.id);
+const judged = D.judgeGroup(groupId, alloc, catalog, seats);
+const held = judged.find((j) => j.held) ?? null;
+const others = judged.filter((j) => !j.held);
+const legal = others.filter((j) => j.legal);
+const nope = others.filter((j) => !j.legal);
+const pick = pickId ? (others.find((j) => j.option.id === pickId) ?? null) : null;
+const stuck = D.stuckBlockers(judged, alloc, catalog, seats);
+const locked = new Set(stuck.map((s) => s.groupId));
+
+const now = D.nowInCanberra();
+const wv = D.weekView(term, now);
+const week = wv.week;
+const dates = [0, 1, 2, 3, 4].map((d) => weekToDate(term.startDate, term.breakAfterWeek, week, d as Day));
+const allEvents = D.weekEvents(alloc, catalog, week);
+const otherEvents = allEvents.filter((e) => e.groupId !== groupId);
+const heldEvent: D.DayEvent | null =
+  held?.slot && !held.slot.optional
+    ? { key: "held", optionId: held.option.id, groupId, course, hue, kind: D.kindWord(group), day: held.slot.day, start: held.slot.start, end: held.slot.end, tailEnd: held.slot.tailEnd, room: held.slot.room, optional: false }
+    : null;
+const days = [0, 1, 2, 3, 4] as Day[];
+const q = Astro.url.searchParams;
+const selDay: Day = D.parseDay(q.get("day")) ?? pick?.slot?.day ?? held?.slot?.day ?? legal[0]?.slot?.day ?? 0;
+const fitDays = new Set(legal.map((j) => j.slot?.day));
+// Week glance scale: 8am to the latest end of anything drawn.
+const wkHi = Math.max(18, ...[...otherEvents.map((e) => e.end), ...others.map((j) => j.slot?.tailEnd ?? j.slot?.end ?? 0)].map((m) => Math.ceil(m / 60)));
+
+const base = `/course/${encodeURIComponent(course.code)}/?group=${encodeURIComponent(groupId)}`;
+const dayHref = (d: number) => `${base}&day=${D.DAY_KEYS[d]}`;
+const previewHref = (j: D.Judgement) => `${base}&day=${D.DAY_KEYS[j.slot?.day ?? 0]}&pick=${encodeURIComponent(j.option.id)}#cf-h`;
+const cancelHref = `${base}&day=${D.DAY_KEYS[held?.slot?.day ?? selDay]}`;
+const label = (j: D.Judgement) => (j.slot ? `${D.DAY_LONG[j.slot.day]} ${D.range12(j.slot.start, j.slot.end)}` : j.when);
+const ghostsFor = (d: number): Ghost[] =>
+  others
+    .filter((j) => j.slot?.day === d)
+    .map((j) => ({
+      key: j.option.id,
+      start: j.slot!.start,
+      end: j.slot!.end,
+      tailEnd: j.slot!.tailEnd,
+      href: j.legal ? previewHref(j) : null,
+      label: label(j),
+      seats: D.seatsText(j.seatsLeft),
+      info: j.info,
+      reason: j.reason,
+      selected: pick?.option.id === j.option.id,
+    }));
+
+// The title names the class by its day, the way a student says it ("your Wednesday tutorial").
+const title = held?.slot ? `Change your ${D.DAY_LONG[held.slot.day]} ${kind}` : `Choose your ${course.code} ${kind}`;
+const otherClash = D.eventClashes(allEvents).find((c) => c.a.groupId !== groupId && c.b.groupId !== groupId);
+const unchanged = otherClash ? ` Your ${D.DAY_LONG[otherClash.day]} ${otherClash.a.kind === otherClash.b.kind ? `${otherClash.a.kind.toLowerCase()}` : ""} clash is unchanged.`.replace("  ", " ") : "";
+const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
+
+// A clashing pick: can the class in the way move somewhere safe? (engine resolve plan, cascade-checked)
+const plan = pick && !pick.full && pick.clashes.length ? resolveClash(pick.option.id, alloc, catalog, seats) : null;
+const blocker = plan?.blockerMoves.length === 1 ? plan.blockerMoves[0] : null;
+const blockerMoves = blocker
+  ? blocker.candidates.filter((c) => c.safe && !c.full && !catalog.options.get(c.optionId)?.overflow).slice(0, 3)
+  : [];
+const blockerCourse = blocker ? catalog.courses.get(catalog.groups.get(blocker.groupId)!.courseId)! : null;
+const blockerStuck = blocker ? D.mobility(blocker.groupId, alloc, catalog, seats) : null;
+const whenOf = (optionId: string) => {
+  const o = catalog.options.get(optionId)!;
+  const s = D.primarySlot(o, catalog.groups.get(o.groupId)!);
+  return s ? D.slotWhen(s) : "another time";
+};
+---
+
+<div class="page wide has-sheet">
+  <div class="main">
+    <div class="g-greet">
+      <h1 class="greet">{title}</h1>
+      <p class="greet-sub">
+        {course.code}{held && <> · Now: {held.when}</>}{held?.slot?.tailEnd && <> + optional drop-in</>}
+      </p>
+    </div>
+    <DayStrip
+      class="g-strip"
+      label="Days this week"
+      days={days.map((d) => ({ day: d, date: dates[d], href: dayHref(d), current: d === selDay, today: d === wv.today, mark: fitDays.has(d) ? "fit" : null }))}
+    />
+    <section class="wk g-wk" aria-label="Every day at a glance" style="--days:5">
+      {
+        days.map((d) => {
+          const bars = D.layoutLanes([
+            ...otherEvents.filter((e) => e.day === d).map((e) => ({ item: { t: `h ${e.hue}` }, a: e.start, b: e.end })),
+            ...(heldEvent && heldEvent.day === d ? [{ item: { t: "me" }, a: heldEvent.start, b: heldEvent.tailEnd ?? heldEvent.end }] : []),
+            ...others.filter((j) => j.slot?.day === d).map((j) => ({ item: { t: j.legal ? "g" : "n" }, a: j.slot!.start, b: j.slot!.tailEnd ?? j.slot!.end })),
+          ]);
+          const fits = legal.filter((j) => j.slot?.day === d);
+          return (
+            <div class:list={["wkday", { sel: d === selDay }]}>
+              <div class="wkh">{D.DAY_SHORT[d]} {dates[d].getUTCDate()}</div>
+              <div class="wkt" aria-hidden="true" style={`--span:${wkHi - 8}`}>
+                {bars.map((b) => (
+                  <span class={`wkb ${b.item.t}`} style={`--from:${(b.a - 8 * 60) / 60};--len:${(b.b - b.a) / 60};--lane:${b.lane};--lanes:${b.lanes}`} />
+                ))}
+              </div>
+              <ul class="wkl">
+                {heldEvent?.day === d && <li class="none">Now {D.time12(heldEvent.start)}</li>}
+                {fits.map((j) => (
+                  <li>
+                    <a href={previewHref(j)} aria-current={pick?.option.id === j.option.id ? "true" : undefined} aria-label={`Preview ${label(j)}, ${D.seatsText(j.seatsLeft)}`}>
+                      {D.time12(j.slot!.start)}<small>{D.seatsText(j.seatsLeft).replace(" left", "")}</small>
+                    </a>
+                  </li>
+                ))}
+                {!fits.length && heldEvent?.day !== d && <li class="none">No fit</li>}
+              </ul>
+            </div>
+          );
+        })
+      }
+    </section>
+    {
+      days.map((d) => (
+        <section class="card tlcard g-tl" aria-labelledby={`tl-h-${d}`} data-day-panel={d} hidden={d !== selDay}>
+          <div class="tl-head">
+            <h2 id={`tl-h-${d}`}>{D.DAY_LONG[d]}</h2>
+            <span class="sub">{D.dateLabel(dates[d])}</span>
+          </div>
+          <Timeline
+            events={[...otherEvents.filter((e) => e.day === d), ...(heldEvent && heldEvent.day === d ? [heldEvent] : [])]}
+            ghosts={ghostsFor(d)}
+            mine={held?.option.id ?? null}
+            faded={Boolean(pick?.legal)}
+            dayLong={D.DAY_LONG[d]}
+            locked={locked}
+          />
+        </section>
+      ))
+    }
+  </div>
+  <div class="rail">
+    {
+      pick && (
+        <section class:list={["card confirm g-problem", { blocked: !pick.legal }]} id="confirm" aria-labelledby="cf-h">
+          {pick.legal ? (
+            <>
+              <h2 id="cf-h" tabindex="-1">If you move</h2>
+              <p>
+                {held?.slot
+                  ? `You’d swap your ${D.DAY_LONG[held.slot.day]} ${D.time12(held.slot.start)} ${kind} for ${D.DAY_LONG[pick.slot!.day]} ${D.time12(pick.slot!.start)}.`
+                  : `You’d take ${label(pick)}.`}
+                {pick.info && ` It ${lower(pick.info)}.`}
+                {unchanged}
+              </p>
+              <div class="row">
+                <form method="post" action="/api/select">
+                  <input type="hidden" name="optionId" value={pick.option.id} />
+                  {draft && <input type="hidden" name="draftId" value={draft.id} />}
+                  <input type="hidden" name="next" value={`${base}&day=${D.DAY_KEYS[pick.slot?.day ?? 0]}`} />
+                  <button class="btn solid" type="submit">Move to {pick.when}</button>
+                </form>
+                <a class="btn quiet" href={cancelHref}>Keep my time</a>
+              </div>
+            </>
+          ) : pick.full ? (
+            <>
+              <h2 id="cf-h" tabindex="-1">{pick.when} is full</h2>
+              <p>You can join the waitlist and keep your current time.</p>
+              <div class="row">
+                <form method="post" action="/api/waitlist">
+                  <input type="hidden" name="optionId" value={pick.option.id} />
+                  <input type="hidden" name="next" value={cancelHref} />
+                  <button class="btn" type="submit">Join the waitlist</button>
+                </form>
+                <a class="btn quiet" href={cancelHref}>Keep my time</a>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 id="cf-h" tabindex="-1">
+                {blocker ? `${pick.when} overlaps your ${D.className(catalog, blocker.groupId)}` : `${pick.when} ${lower(pick.reason ?? "overlaps another class")}`}
+              </h2>
+              {blocker && blockerMoves.length > 0 ? (
+                <>
+                  <p>Move your {D.className(catalog, blocker.groupId)} too, and this time fits.</p>
+                  <div class="stack">
+                    {blockerMoves.map((m) => (
+                      <form method="post" action="/api/move">
+                        <input type="hidden" name="moves" value={JSON.stringify([{ groupId: blocker.groupId, fromOptionId: blocker.currentOptionId, toOptionId: m.optionId }, { groupId, fromOptionId: held?.option.id ?? null, toOptionId: pick.option.id }])} />
+                        {draft && <input type="hidden" name="draftId" value={draft.id} />}
+                        <input type="hidden" name="next" value={`${base}&day=${D.DAY_KEYS[pick.slot?.day ?? 0]}`} />
+                        <button class="btn solid" type="submit">Move {blockerCourse?.code} to {whenOf(m.optionId)} and take this</button>
+                      </form>
+                    ))}
+                  </div>
+                </>
+              ) : blocker && blockerCourse ? (
+                <p>
+                  Your {D.className(catalog, blocker.groupId)} can’t move: {blockerStuck?.why}.{" "}
+                  <a href={`/course/${encodeURIComponent(blockerCourse.code)}/?group=${encodeURIComponent(blocker.groupId)}`}>See its times</a>
+                </p>
+              ) : (
+                <p>It overlaps more than one of your classes.</p>
+              )}
+              {legal.length > 0 && (
+                <p>
+                  Or pick a time that fits:{" "}
+                  {legal.slice(0, 3).map((j, i) => (
+                    <>{i > 0 && ", "}<a href={previewHref(j)}>{j.when}</a></>
+                  ))}
+                  .
+                </p>
+              )}
+              <div class="row"><a class="btn quiet" href={cancelHref}>Keep my time</a></div>
+              <form method="post" action="/api/select" class="keep">
+                <input type="hidden" name="optionId" value={pick.option.id} />
+                <input type="hidden" name="force" value="1" />
+                {draft && <input type="hidden" name="draftId" value={draft.id} />}
+                <input type="hidden" name="next" value={`${base}&day=${D.DAY_KEYS[pick.slot?.day ?? 0]}`} />
+                <button class="linkbtn" type="submit">Keep the clash and take it anyway</button>
+              </form>
+            </>
+          )}
+        </section>
+      )
+    }
+    <aside class="panel sheet g-other" id="panel" data-state="open" aria-labelledby="panel-h">
+      <button type="button" class="sheet-bar" aria-expanded="true" aria-controls="panel-body" hidden>
+        <span>{D.plural(legal.length, "time fits", "times fit")}<Icon name="up" /></span>
+      </button>
+      <div class="panel-body" id="panel-body">
+        <h2 id="panel-h" tabindex="-1">Other times</h2>
+        <p class="sub">Ringed days have a time that fits.</p>
+        {
+          stuck.filter((s) => !(blocker && blockerMoves.length === 0 && s.groupId === blocker.groupId)).map((s) => (
+            <p class="note"><Icon name="lock" /><span>Your {D.className(catalog, s.groupId)} can’t move: {s.why}.</span></p>
+          ))
+        }
+        <h3>These fit</h3>
+        {
+          legal.length ? (
+            <ul class="plain">
+              {legal.map((j, i) => (
+                <li class="opt-row" data-oid={j.option.id} style={`--i:${i}`}>
+                  <span class="what">
+                    <span class="t">{j.when}</span>
+                    <span class="s">{D.seatsText(j.seatsLeft)}</span>
+                    {j.info && <span class="sm">{j.info}</span>}
+                    {j.extra.map((x) => <span class="sm">Also {x}</span>)}
+                  </span>
+                  <a class="btn solid small" href={previewHref(j)} aria-label={`Preview ${label(j)}`}>Preview</a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No other time fits right now.</p>
+          )
+        }
+        {
+          nope.length > 0 && (
+            <details class="more">
+              <summary>Show {D.plural(nope.length, "more time", "more times")}</summary>
+              <ul class="plain">
+                {nope.map((j) => (
+                  <li class="opt-row no" data-oid={j.option.id}>
+                    <span class="what">
+                      <span class="t">{j.when}</span>
+                      {j.full ? <span><span class="chipfull">Full</span></span> : <span class="s">{j.reason}</span>}
+                    </span>
+                    <a class="linkbtn" href={previewHref(j)} aria-label={`Why not ${label(j)}`}>Why?</a>
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )
+        }
+      </div>
+    </aside>
+  </div>
+</div>

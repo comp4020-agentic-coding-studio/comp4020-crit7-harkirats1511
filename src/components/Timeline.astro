@@ -1,0 +1,189 @@
+---
+// One day as a timeline: the student's real classes (course-hue stems, drop-in tails), clash bands, the now line,
+// and optionally "ghosts" (other times of one class) or a swap preview. Positions are computed here, on the server,
+// so the page reads correctly without JavaScript.
+import { type DayEvent, eventClashes, eventName, hhmm, hourLabel, layoutLanes, range12, time12, type Hue } from "../lib/daybook";
+import Icon from "./Icon.astro";
+
+export interface Ghost {
+  key: string;
+  start: number;
+  end: number;
+  tailEnd: number | null;
+  /** Legal: a link to preview it. */
+  href: string | null;
+  label: string;
+  seats: string;
+  info: string | null;
+  reason: string | null;
+  selected: boolean;
+}
+export interface PreviewBlock {
+  code: string;
+  hue: Hue;
+  start: number;
+  end: number;
+  tailEnd: number | null;
+}
+interface Props {
+  events: DayEvent[];
+  dayLong: string;
+  ghosts?: Ghost[];
+  preview?: PreviewBlock | null;
+  /** Option id drawn as "Now" (the class being changed). */
+  mine?: string | null;
+  faded?: boolean;
+  nowMin?: number | null;
+  /** Group ids to mark "Can't move". */
+  locked?: Set<string>;
+}
+const { events, dayLong, ghosts = [], preview = null, mine = null, faded = false, nowMin = null, locked = new Set<string>() } = Astro.props;
+
+type Item = { k: "e"; e: DayEvent } | { k: "g"; g: Ghost } | { k: "p"; p: PreviewBlock };
+const spans = [
+  ...events.map((e) => ({ item: { k: "e", e } as Item, a: e.start, b: e.tailEnd ?? e.end })),
+  ...ghosts.map((g) => ({ item: { k: "g", g } as Item, a: g.start, b: g.tailEnd ?? g.end })),
+  ...(preview ? [{ item: { k: "p", p: preview } as Item, a: preview.start, b: preview.tailEnd ?? preview.end }] : []),
+];
+const empty = spans.length === 0;
+let start = 9;
+let end = 14;
+if (!empty) {
+  let lo = Math.min(...spans.map((s) => s.a));
+  const hi = Math.max(...spans.map((s) => s.b));
+  if (nowMin !== null && nowMin < lo && lo - nowMin <= 180) lo = nowMin;
+  start = Math.floor(lo / 60);
+  end = Math.ceil(hi / 60);
+  let flip = false;
+  while (end - start < 5) {
+    if (flip || start <= 8) end++;
+    else start--;
+    flip = !flip;
+  }
+}
+const laned = layoutLanes(spans);
+const pos = (a: number, b: number, lane: number, lanes: number, i: number, tail: number | null, endMin: number) =>
+  `--from:${(a - start * 60) / 60};--len:${(b - a) / 60};--lane:${lane};--lanes:${lanes};--i:${i}${tail !== null ? `;--tail:${(tail - endMin) / 60}` : ""}`;
+const clashes = eventClashes(events);
+const laneOf = (e: DayEvent) => laned.find((l) => l.item.k === "e" && l.item.e === e);
+const clashText = (e: DayEvent) =>
+  clashes
+    .filter((c) => c.a === e || c.b === e)
+    .map((c) => `Clashes with your ${eventName(c.a === e ? c.b : c.a)}, ${range12(c.from, c.to)}.`)
+    .join(" ");
+const hours = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+const showNow = nowMin !== null && nowMin >= start * 60 && nowMin <= end * 60;
+---
+
+{
+  empty ? (
+    <div class="empty">
+      <b>Nothing on {dayLong}.</b>Enjoy it.
+    </div>
+  ) : (
+    <div class="tl" style={`--n:${end - start}`}>
+      <div class="tl-hours" aria-hidden="true">
+        {hours.map((h, i) => <span class="hlab" style={`--h:${i}`}>{hourLabel(h)}</span>)}
+      </div>
+      <div class="tl-body">
+        <div class="tl-lines" aria-hidden="true">
+          {hours.map((_, i) => <div class="hl" style={`--h:${i}`} />)}
+        </div>
+        <ol class="tl-list" aria-label={`${dayLong}, in time order`}>
+          {laned.map((l, i) => {
+            if (l.item.k === "e") {
+              const e = l.item.e;
+              const isMine = mine !== null && e.optionId === mine;
+              const short = !(e.end - e.start > 75);
+              const cl = clashText(e);
+              return (
+                <li class:list={["ev", e.hue, { optional: e.optional, mine: isMine, faded: isMine && faded }]} style={pos(l.a, l.b, l.lane, l.lanes, i, e.tailEnd, e.end)}>
+                  <div class="in">
+                    <div class="body">
+                      <div class="row1">
+                        <span class="tag">{e.course.code}</span>
+                        <h3>{e.kind}{e.optional ? ", optional" : ""}</h3>
+                        {isMine && <span class="nowchip">Now</span>}
+                      </div>
+                      {short ? (
+                        <p class="m"><time datetime={hhmm(e.start)}>{range12(e.start, e.end)}</time>{e.room ? ` · ${e.room}` : ""}</p>
+                      ) : (
+                        <>
+                          <p class="m"><time datetime={hhmm(e.start)}>{range12(e.start, e.end)}</time></p>
+                          {e.room && <p class="m">{e.room}</p>}
+                        </>
+                      )}
+                      {locked.has(e.groupId) && <span class="lock"><Icon name="lock" />Can’t move</span>}
+                      {cl && <span class="sr">{cl}</span>}
+                    </div>
+                    {e.tailEnd !== null && <div class="tailbar">Optional drop-in, {range12(e.end, e.tailEnd)}</div>}
+                  </div>
+                </li>
+              );
+            }
+            if (l.item.k === "p") {
+              const p = l.item.p;
+              return (
+                <li class="ghost ok pv-on" style={pos(l.a, l.b, l.lane, l.lanes, i, p.tailEnd, p.end)}>
+                  <div class="in">
+                    <div class="row1"><span class={`tag ${p.hue}`}>{p.code}</span><span class="g-t">New: {range12(p.start, p.end)}</span></div>
+                  </div>
+                </li>
+              );
+            }
+            const g = l.item.g;
+            const tailText = g.tailEnd !== null ? `Optional drop-in, ${range12(g.end, g.tailEnd)}` : null;
+            return g.href ? (
+              <li class:list={["ghost ok", { "pv-on": g.selected }]} data-oid={g.key} style={pos(l.a, l.b, l.lane, l.lanes, i, g.tailEnd, g.end)}>
+                <a class="in" href={g.href} aria-label={`Preview ${g.label}, ${g.seats}${g.info ? `. ${g.info}` : ""}`}>
+                  <span class="gmain">
+                    <span class="g-t">{range12(g.start, g.end)}</span>
+                    <span class="g-s">{g.seats}</span>
+                    {g.info && <span class="g-info hide-sm">{g.info}</span>}
+                    <span class="g-act">Preview <Icon name="arrow" /></span>
+                  </span>
+                  {tailText && <span class="tailbar">{tailText}</span>}
+                </a>
+              </li>
+            ) : (
+              <li class:list={["ghost no", { "pv-on": g.selected }]} data-oid={g.key} style={pos(l.a, l.b, l.lane, l.lanes, i, g.tailEnd, g.end)}>
+                <div class="in">
+                  <span class="gmain">
+                    <span class="g-t"><span class="sr">Not available: {g.label}. </span><span aria-hidden="true">{range12(g.start, g.end)}</span></span>
+                    <span class:list={["reason", { clashy: g.reason !== "Full" }]}>
+                      {g.reason !== "Full" && <Icon name="alert" />}
+                      <span>
+                        {g.reason?.split(" (")[0]}
+                        {g.reason?.includes(" (") && <span class="hide-sm"> ({g.reason.split(" (").slice(1).join(" (")}</span>}
+                      </span>
+                    </span>
+                  </span>
+                  {tailText && <span class="tailbar">{tailText}</span>}
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+        {clashes.map((c) => {
+          const la = laneOf(c.a)!;
+          const lb = laneOf(c.b)!;
+          const at = Math.min(la.lane, lb.lane) / la.lanes;
+          const fr = (c.from - start * 60) / 60;
+          const len = (c.to - c.from) / 60;
+          const hrs = c.to - c.from;
+          return (
+            <>
+              <div class="band" style={`--from:${fr};--len:${len};--at:${at}`} aria-hidden="true">
+                <span class="lab"><Icon name="alert" />Clash · {hrs === 60 ? "1 hour" : hrs % 60 === 0 ? `${hrs / 60} hours` : `${hrs} min`}</span>
+              </div>
+              {[la, lb].map((q) => <div class="cbar" style={`--from:${fr};--len:${len};--lane:${q.lane};--lanes:${q.lanes}`} aria-hidden="true" />)}
+            </>
+          );
+        })}
+        {showNow && (
+          <div class="now" style={`--from:${(nowMin! - start * 60) / 60}`} aria-hidden="true"><span>{time12(nowMin!)}</span></div>
+        )}
+      </div>
+    </div>
+  )
+}

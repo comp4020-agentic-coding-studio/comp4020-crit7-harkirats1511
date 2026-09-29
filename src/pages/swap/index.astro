@@ -1,0 +1,146 @@
+---
+// Swap a time: up to three ranked times for one class (no overlaps first, then most seats to spare), each with
+// reasons computed from the student's real week, plus every time in a disclosure. "See my Thursday" previews the day.
+import Icon from "../../components/Icon.astro";
+import Timeline from "../../components/Timeline.astro";
+import Shell from "../../layouts/Shell.astro";
+import * as D from "../../lib/daybook";
+import { getViewState } from "../../lib/view";
+
+const view = getViewState(Astro.url);
+const { catalog, term, alloc, seats, draft } = view;
+const q = Astro.url.searchParams;
+const week = D.weekView(term, D.nowInCanberra()).week;
+const events = D.weekEvents(alloc, catalog, week);
+
+// Classes with other times, in course order; the first one with a time that fits is the default.
+const classes = [...catalog.groups.values()]
+  .filter((g) => alloc.has(g.id) && D.realOptions(g).length > 1)
+  .map((g) => ({ g, course: catalog.courses.get(g.courseId)!, fits: D.judgeGroup(g.id, alloc, catalog, seats).filter((j) => j.legal).length }))
+  .sort((a, b) => a.course.code.localeCompare(b.course.code) || a.g.name.localeCompare(b.g.name));
+const asked = classes.find((c) => c.g.id === q.get("group"));
+const current = asked ?? classes.find((c) => c.fits > 0) ?? classes[0] ?? null;
+const groupId = current?.g.id ?? "";
+const judged = current ? D.judgeGroup(groupId, alloc, catalog, seats) : [];
+const held = judged.find((j) => j.held) ?? null;
+const cards = current ? D.rankSwaps(judged, events, groupId) : [];
+const sel = cards.find((c) => c.j.option.id === q.get("see")) ?? cards[0] ?? null;
+const kind = current ? D.kindWord(current.g).toLowerCase() : "";
+const hue = current ? D.courseHue(catalog, current.course.id) : "c1";
+const base = `/swap/?group=${encodeURIComponent(groupId)}`;
+const pv = sel?.j.slot ?? null;
+const pvEvents = pv ? events.filter((e) => e.day === pv.day && e.groupId !== groupId) : [];
+const others = judged.filter((j) => !j.held);
+---
+
+<Shell title="Swap a time" view={view}>
+  {
+    !current ? (
+      <div class="pagehead">
+        <h1>Swap a time</h1>
+        <p>None of your classes has another time. <a href="/">Back to my week</a>.</p>
+      </div>
+    ) : (
+      <div class="swap-grid">
+        <div>
+          <h1 class="greet">Swap your {current.course.code} {kind}</h1>
+          {classes.length > 1 && (
+            <ul class="classpick" aria-label="Class">
+              {classes.map((c) => (
+                <li>
+                  <a href={`/swap/?group=${encodeURIComponent(c.g.id)}`} aria-current={c.g.id === groupId ? "true" : undefined}>
+                    {c.course.code} {D.kindWord(c.g).toLowerCase()}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+          {held?.slot && (
+            <p class="now-card">
+              <Icon name="clock" />
+              <span>
+                <span class="eyebrow">You have</span>
+                <br />
+                <span class="tt">{held.when}</span>{held.slot.room && ` · ${held.slot.room}`}
+              </span>
+            </p>
+          )}
+          <h2 class="sec" style="margin-top:28px">Better than what you have</h2>
+          <p class="sec-lead">{D.SWAP_RULE}</p>
+          {cards.length === 0 ? (
+            <p class="card" style="margin-top:12px">
+              No other time fits right now. <a href={`/course/${encodeURIComponent(current.course.code)}/?group=${encodeURIComponent(groupId)}`}>See why</a>.
+            </p>
+          ) : (
+            <ol class="cards">
+              {cards.map((c, i) => {
+                const s = c.j.slot!;
+                const on = sel?.j.option.id === c.j.option.id;
+                return (
+                  <li class="card swc" data-sel={String(on)} style={`--i:${i}`}>
+                    <div class="swc-top">
+                      <div>
+                        <h3 class="when">{c.j.when}</h3>
+                        <p class="seats">{D.seatsText(c.j.seatsLeft)}{s.room && ` · ${s.room}`}</p>
+                      </div>
+                      <span class="badge"><Icon name={c.badge === "No overlaps" ? "check" : "dash"} />{c.badge}</span>
+                    </div>
+                    <ul class="why">
+                      {c.why.map((w) => (
+                        <li class={w.tone}>
+                          <Icon name={w.tone === "good" ? "check" : "dash"} />
+                          <span>{w.text}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    <div class="row">
+                      <form method="post" action="/api/select">
+                        <input type="hidden" name="optionId" value={c.j.option.id} />
+                        {draft && <input type="hidden" name="draftId" value={draft.id} />}
+                        <input type="hidden" name="next" value={base} />
+                        <button class:list={["btn", { solid: on }]} type="submit" aria-label={`Swap to ${c.j.when}`}>Swap to this</button>
+                      </form>
+                      <a class="btn quiet" href={`${base}&see=${encodeURIComponent(c.j.option.id)}#pv-title`} aria-current={on ? "true" : undefined}>
+                        See my {D.DAY_LONG[s.day]}
+                      </a>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+          {others.length > 0 && (
+            <details class="more card allcard">
+              <summary>Show all times</summary>
+              <ul class="all-times">
+                {others.map((j) => (
+                  <li>
+                    <span>{j.when}</span>
+                    {j.legal ? (
+                      <span class="s">{D.seatsText(j.seatsLeft)}</span>
+                    ) : j.full ? (
+                      <span class="chipfull">Full</span>
+                    ) : (
+                      <span class="s">{j.reason}</span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </div>
+        {sel && pv && (
+          <aside class="swap-side card tlcard" id="preview" aria-labelledby="pv-title">
+            <div class="tl-head"><h2 id="pv-title" tabindex="-1">{D.DAY_LONG[pv.day]} with this swap</h2></div>
+            <p class="pvline">You’d swap {held?.when ?? "nothing"} for {sel.j.when}.</p>
+            <Timeline
+              events={pvEvents}
+              dayLong={D.DAY_LONG[pv.day]}
+              preview={{ code: current.course.code, hue, start: pv.start, end: pv.end, tailEnd: pv.tailEnd }}
+            />
+          </aside>
+        )}
+      </div>
+    )
+  }
+</Shell>

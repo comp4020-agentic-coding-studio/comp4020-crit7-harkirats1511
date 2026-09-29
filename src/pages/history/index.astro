@@ -1,18 +1,17 @@
 ---
-import Shell from "../../layouts/Shell.astro";
 import HistoryList from "../../components/HistoryList.astro";
-import "../../styles/pages.css";
-import { getViewState } from "../../lib/view";
+import Shell from "../../layouts/Shell.astro";
 import { DEFAULT_STUDENT_ID, loadHistory } from "../../lib/services/alloc";
+import { getViewState } from "../../lib/view";
 
 const v = getViewState(Astro.url);
 const batches = loadHistory(DEFAULT_STUDENT_ID, 100);
 ---
 
 <Shell title="History" view={v}>
-  <div class="h-page">
+  <div class="pagehead">
     <h1>History</h1>
-    <p class="h-lede">Every change to your timetable, newest first. The newest change that has not been undone can be undone here. Undo fails cleanly if the place you would go back to is now full.</p>
-    <HistoryList batches={batches} catalog={v.catalog} />
+    <p>Every change, newest first. You can undo the newest one.</p>
   </div>
+  <HistoryList batches={batches} catalog={v.catalog} />
 </Shell>

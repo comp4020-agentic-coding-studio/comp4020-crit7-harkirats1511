@@ -1,121 +1,109 @@
 ---
-import SeatsMeter from "../../components/SeatsMeter.astro";
-import StateChip from "../../components/StateChip.astro";
-import WeeksLabel from "../../components/WeeksLabel.astro";
+// The List view: every class you hold, per course, with its time, weeks and room. Secondary to My week.
+import Icon from "../../components/Icon.astro";
 import Shell from "../../layouts/Shell.astro";
+import * as D from "../../lib/daybook";
 import { clashesFor } from "../../lib/engine/clash";
-import { clashWhen, DAY_NAMES, fmtRange, getViewState, optionFullName } from "../../lib/view";
+import { getViewState } from "../../lib/view";
 
 const view = getViewState(Astro.url);
-const { catalog, term, alloc, seats, draft } = view;
+const { catalog, alloc, draft } = view;
 const courses = [...catalog.courses.values()].sort((a, b) => a.code.localeCompare(b.code));
+const clashText = (optionId: string) =>
+  clashesFor(optionId, alloc, catalog).map((c) => {
+    const o = c.overlaps[0];
+    return `Clashes with your ${D.className(catalog, c.groupB)}, ${D.DAY_SHORT[o.day]} ${D.range12(o.fromMin, o.toMin)}`;
+  });
 ---
 
-<Shell title="Timetable" view={view}>
-  <div class="page-title">
-    <h1>Timetable</h1>
-    <span class="page-tools">
-      <a class="btn" href="/api/timetable.ics" download>Download iCal (.ics)</a>
-      <a class="btn" href="/grid/">Open grid</a>
-    </span>
+<Shell title="List of classes" view={view}>
+  <div class="pagehead">
+    <h1>Your classes</h1>
+    <ul class="tabs" aria-label="View">
+      <li><a href="/">My week</a></li>
+      <li><a href="/timetable/" aria-current="page">List</a></li>
+    </ul>
   </div>
-  <div class="page-body">
-    {draft && <p class="note">Showing your draft "{draft.name}", not your real timetable. The .ics download is always your real timetable.</p>}
+  <div class="stack">
     {
       courses.map((c) => (
-        <section class="panel" aria-labelledby={`c-${c.id}`}>
-          <div class="panel-head">
-            <h2 id={`c-${c.id}`}>{c.code} <span class="head-sub">{c.title}</span></h2>
-            <a href={`/course/${c.code}/`}>Course page</a>
+        <section class="block" aria-labelledby={`c-${c.id}`}>
+          <div class="block-head">
+            <h2 id={`c-${c.id}`}>
+              <span class={`tag ${D.courseHue(catalog, c.id)}`}>{c.code}</span> {c.title}
+            </h2>
           </div>
-          <div class="table-wrap" tabindex="0" role="group" aria-label={`${c.code} activities`}>
-            <table class="data">
-              <caption class="sr-only">{c.code} activities and the option you hold</caption>
+          <div class="table-wrap">
+            <table class="data stackable">
+              <caption class="sr">{c.code} classes you hold</caption>
               <thead>
                 <tr>
-                  <th scope="col">Activity</th>
-                  <th scope="col">Held option</th>
-                  <th scope="col">Day</th>
-                  <th scope="col">Time</th>
-                  <th scope="col">Teaching weeks</th>
-                  <th scope="col">Location</th>
-                  <th scope="col">Seats left</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Actions</th>
+                  <th scope="col">Class</th>
+                  <th scope="col">When</th>
+                  <th scope="col">Weeks</th>
+                  <th scope="col">Room</th>
+                  <th scope="col"><span class="sr">Actions</span></th>
                 </tr>
               </thead>
-              {c.groups.map((g) => {
-                const oid = alloc.get(g.id);
-                const o = oid ? catalog.options.get(oid) : undefined;
-                if (!o) {
-                  return (
-                    <tbody>
+              <tbody>
+                {c.groups.map((g) => {
+                  const oid = alloc.get(g.id);
+                  const o = oid ? catalog.options.get(oid) : undefined;
+                  const change = `/course/${encodeURIComponent(c.code)}/?group=${encodeURIComponent(g.id)}`;
+                  if (!o) {
+                    return (
                       <tr>
-                        <th scope="row">{g.name}</th>
-                        <td colspan="6" class="muted">Not chosen</td>
-                        <td><StateChip kind="select" label="Not chosen" /></td>
-                        <td class="actions"><a class="btn btn-primary" href={`/course/${c.code}/`} aria-label={`Choose ${g.name} for ${c.code}`}>Choose</a></td>
+                        <th scope="row">{D.kindWord(g)}</th>
+                        <td colspan="3" class="muted">Not chosen yet</td>
+                        <td class="actions"><a class="btn small" href={change}>Choose</a></td>
                       </tr>
-                    </tbody>
-                  );
-                }
-                const clashes = clashesFor(o.id, alloc, catalog);
-                const n = o.sessions.length;
-                const left = o.capacity === null ? null : Math.max(0, o.capacity - (seats.get(o.id) ?? 0));
-                return (
-                  <tbody class:list={{ "has-clash": clashes.length > 0 }}>
-                    {o.sessions.map((s, i) => (
-                      <tr>
-                        {i === 0 && <th scope="row" rowspan={n}>{g.name}</th>}
-                        {i === 0 && (
-                          <td rowspan={n}>
-                            <strong>{o.code}</strong>
-                            {o.overflow && <div class="sub"><StateChip kind="overflow" /></div>}
-                          </td>
-                        )}
-                        <td>{n > 1 && <span class="part">{s.part}</span>} {DAY_NAMES[s.day]}</td>
-                        <td class="nowrap">
-                          {fmtRange(s)}
-                          {(s.exempt || g.exemptFromClash) && <div class="sub"><StateChip kind="dropin" label="Drop-in, never clashes" /></div>}
-                        </td>
-                        <td><WeeksLabel mask={s.weeks} breakAfterWeek={term.breakAfterWeek} /></td>
-                        <td>{s.location ?? "Not published"}</td>
-                        {i === 0 && <td rowspan={n}><SeatsMeter capacity={o.capacity} left={left} /></td>}
-                        {i === 0 && (
-                          <td rowspan={n}>
-                            <StateChip kind={clashes.length === 0 ? "yours" : "clash"} />
-                          </td>
-                        )}
-                        {i === 0 && (
-                          <td rowspan={n} class="actions">
-                            {clashes.length > 0 && (
-                              <a class="btn btn-primary" href={`/course/${c.code}/?pick=${encodeURIComponent(o.id)}`} aria-label={`Resolve clash for ${c.code} ${g.name}`}>Resolve</a>
-                            )}
-                            <a class="btn" href={`/course/${c.code}/`} aria-label={`Course page for ${c.code} ${g.name}`}>Options</a>
-                            <a class="btn" href={`/grid/?focus=${encodeURIComponent(g.id)}`} aria-label={`Show ${c.code} ${g.name} on the grid`}>Grid</a>
+                    );
+                  }
+                  const slots = D.toSlots(o.sessions, g).filter((s) => !s.optional || g.exemptFromClash);
+                  const clashes = clashText(o.id);
+                  const canChange = D.realOptions(g).length > 1;
+                  return (
+                    <tr class:list={{ "has-clash": clashes.length > 0 }}>
+                      <th scope="row">{D.kindWord(g)}{g.exemptFromClash && <span class="s">Optional</span>}</th>
+                      <td>
+                        {slots.map((s) => (
+                          <span class="nowrap" style="display:block">
+                            {D.DAY_SHORT[s.day]} <time datetime={D.hhmm(s.start)}>{D.range12(s.start, s.end)}</time>
+                            {s.tailEnd !== null && <span class="s">+ optional drop-in {D.range12(s.end, s.tailEnd)}</span>}
+                          </span>
+                        ))}
+                        {clashes.map((t) => (
+                          <span class="clashline"><Icon name="alert" />{t}</span>
+                        ))}
+                      </td>
+                      <td>{slots.map((s) => <span style="display:block">{D.weeksWords(s.weeks)}</span>)}</td>
+                      <td>{slots[0]?.room ?? <span class="muted">Not published</span>}</td>
+                      <td class="actions">
+                        {canChange && <a class="btn small" href={change} aria-label={`Change your ${c.code} ${D.kindWord(g).toLowerCase()}`}>Change</a>}
+                        <details class="confirmx">
+                          <summary class="btn quiet small" aria-label={`Drop your ${c.code} ${D.kindWord(g).toLowerCase()}`}>Drop</summary>
+                          <div class="confirmx-body">
+                            <p>Drop your {c.code} {D.kindWord(g).toLowerCase()}? You can undo straight after.</p>
                             <form method="post" action="/api/drop">
                               <input type="hidden" name="groupId" value={g.id} />
                               {draft && <input type="hidden" name="draftId" value={draft.id} />}
-                              <button class="btn btn-danger" type="submit" aria-label={`Drop ${c.code} ${g.name} ${o.code}`}>Drop</button>
+                              <input type="hidden" name="next" value="/timetable/" />
+                              <button class="btn danger small" type="submit">Drop it</button>
                             </form>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                    {clashes.map((cl) => (
-                      <tr class="clash-row">
-                        <td colspan="9">
-                          <StateChip kind="clash" /> {c.code} {g.name} {o.code} clashes with <strong>{optionFullName(catalog, cl.optionB)}</strong>: {clashWhen(cl, term)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                );
-              })}
+                          </div>
+                        </details>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
             </table>
           </div>
         </section>
       ))
     }
   </div>
+  <p style="margin-top:20px">
+    <a class="btn quiet" href="/api/timetable.ics" download><Icon name="cal" />Add to my calendar (.ics)</a>
+  </p>
 </Shell>

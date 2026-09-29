@@ -1,54 +1,84 @@
 ---
-import OptionsTable from "../../components/OptionsTable.astro";
-import ResolvePanel from "../../components/ResolvePanel.astro";
+// A course: its classes (each links to "change this class"), or, with ?group= / ?pick=, the Change a class view.
+// ?pick=<optionId> is where a refused clashing select lands (POST /api/select), and step one of a move.
+import ChangeClass from "../../components/ChangeClass.astro";
+import Icon from "../../components/Icon.astro";
 import Shell from "../../layouts/Shell.astro";
+import * as D from "../../lib/daybook";
 import { findCourse, getViewState } from "../../lib/view";
 
 const view = getViewState(Astro.url);
-const { catalog, alloc } = view;
+const { catalog, alloc, seats } = view;
 const course = findCourse(catalog, Astro.params.id ?? "");
 if (!course) Astro.response.status = 404;
 
-const pickId = Astro.url.searchParams.get("pick");
+const q = Astro.url.searchParams;
+const pickId = q.get("pick");
 const pick = course && pickId ? catalog.options.get(pickId) : undefined;
-const pickHere = pick && catalog.groups.get(pick.groupId)?.courseId === course?.id ? pick : undefined;
-const pickBad = Boolean(pickId && course && !pickHere);
+const pickGroup = pick ? catalog.groups.get(pick.groupId) : undefined;
+const pickHere = pickGroup && pickGroup.courseId === course?.id ? pick : undefined;
+const groupParam = q.get("group");
+const groupHere = groupParam && catalog.groups.get(groupParam)?.courseId === course?.id ? groupParam : null;
+const groupId = pickHere?.groupId ?? groupHere;
+const bad = Boolean((pickId && !pickHere) || (groupParam && !groupHere));
+const group = groupId ? catalog.groups.get(groupId) : undefined;
+
+const rows = course
+  ? course.groups.map((g) => {
+      const held = alloc.get(g.id);
+      const o = held ? catalog.options.get(held) : undefined;
+      const slot = o ? D.primarySlot(o, g) : null;
+      const count = D.realOptions(g).filter((x) => x.id !== held).length;
+      const m = D.mobility(g.id, alloc, catalog, seats);
+      return { g, slot, count, m, held: Boolean(o) };
+    })
+  : [];
+const title = !course ? "Course not found" : group ? `Change your ${course.code} ${D.kindWord(group).toLowerCase()}` : `${course.code} ${course.title}`;
 ---
 
-{
-  !course ? (
-    <Shell title="Course not found" view={view}>
-      <div class="page-title"><h1>Course not found</h1></div>
-      <div class="page-body">
-        <p>There is no course "{Astro.params.id}" in this term. <a href="/timetable/">Back to your timetable</a>.</p>
+<Shell title={title} view={view}>
+  {
+    !course ? (
+      <div class="pagehead">
+        <h1>Course not found</h1>
+        <p>There is no course “{Astro.params.id}” this semester. <a href="/change/">Pick a class to change</a>.</p>
       </div>
-    </Shell>
-  ) : (
-    <Shell title={`${course.code} ${course.title}`} view={view}>
-      <div class="page-title">
-        <h1>{course.code} <span class="head-sub">{course.title}</span></h1>
-        <span class="page-tools"><a class="btn" href="/timetable/">Back to timetable</a></span>
-      </div>
-      <div class="page-body">
-        {course.aliases.length > 0 && (
-          <p class="aliases">Also listed as <strong>{course.aliases.join(", ")}</strong> (same classes and seats).</p>
-        )}
-        {pickBad && <p class="note">The option in the link is not part of this course, so there is nothing to resolve here.</p>}
-        {pickHere && <ResolvePanel course={course} optionId={pickHere.id} view={view} />}
-        {course.groups.map((g) => {
-          const held = alloc.get(g.id);
-          const heldOpt = held ? catalog.options.get(held) : undefined;
-          return (
-            <section class="panel" aria-labelledby={`g-${g.id}`}>
-              <div class="panel-head">
-                <h2 id={`g-${g.id}`}>{g.name} <span class="head-sub">{g.kind}{heldOpt ? `, you hold ${heldOpt.code}` : ", not chosen"}</span></h2>
-                <a href={`/grid/?focus=${encodeURIComponent(g.id)}`}>Show on grid</a>
-              </div>
-              <OptionsTable course={course} group={g} view={view} pick={pickHere?.id ?? null} />
-            </section>
-          );
-        })}
-      </div>
-    </Shell>
-  )
-}
+    ) : group && groupId ? (
+      <ChangeClass view={view} course={course} groupId={groupId} pickId={pickHere?.id ?? null} />
+    ) : (
+      <>
+        <div class="pagehead">
+          <h1>{course.code} {course.title}</h1>
+          {course.aliases.length > 0 && <p>Also listed as {course.aliases.join(", ")}: same classes and seats.</p>}
+          {bad && <p>That link points at a class outside this course, so here are this course’s classes.</p>}
+        </div>
+        <ul class="classes">
+          {rows.map((r) =>
+            r.count > 0 ? (
+              <li>
+                <a href={`/course/${encodeURIComponent(course.code)}/?group=${encodeURIComponent(r.g.id)}`}>
+                  <span class={`tag ${D.courseHue(catalog, course.id)}`}>{D.kindWord(r.g)}</span>
+                  <span class="what">
+                    <span class="t">{r.slot ? D.slotWhen(r.slot) : "Not chosen yet"}</span>
+                    <span class="s">{r.m.movable ? D.plural(r.count, "other time", "other times") : `Can’t move: ${r.m.why}`}</span>
+                  </span>
+                  <span class="go"><span class="go-t">{r.held ? "Change" : "Choose"}</span><Icon name="arrow" /></span>
+                </a>
+              </li>
+            ) : (
+              <li>
+                <div class="static">
+                  <span class={`tag ${D.courseHue(catalog, course.id)}`}>{D.kindWord(r.g)}</span>
+                  <span class="what">
+                    <span class="t">{r.slot ? D.slotWhen(r.slot) : "Not chosen yet"}</span>
+                    <span class="s">Runs once</span>
+                  </span>
+                </div>
+              </li>
+            ),
+          )}
+        </ul>
+      </>
+    )
+  }
+</Shell>
