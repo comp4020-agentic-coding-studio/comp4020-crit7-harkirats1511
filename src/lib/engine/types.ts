@@ -73,7 +73,7 @@ export interface Term {
   startDate: string;
   /** Number of teaching weeks (real term: 12, mid-sem break after week 6; WeekMask stays a 1..13 bitmask). */
   teachingWeeks: number;
-  /** The break sits after this teaching week (null = no break). Calendar week = teaching week + 1 after it. */
+  /** The break sits after this teaching week (null = no break). After the break the calendar advances by TWO weeks (week 6 = Mon 2026-08-31, week 7 = Mon 2026-09-21). */
   breakAfterWeek: number | null;
 }
 
