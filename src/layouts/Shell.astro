@@ -1,0 +1,37 @@
+---
+// Shared shell. Pages pass a title and provide their own single <h1> in the slot.
+// Workstream F owns this file, shell.css, and the enrolment sidebar; workstream G owns grid.css.
+import "../styles/shell.css";
+import "../styles/grid.css";
+
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav aria-label="site">
+        <a href="/">Dashboard</a>
+        <a href="/timetable/">Timetable</a>
+        <a href="/grid/">Grid</a>
+        <a href="/draft/">Draft</a>
+        <a href="/auto-fix/">Auto-fix</a>
+        <a href="/history/">History</a>
+        <a href="/preferences/">Preferences</a>
+        <a href="/readme/">About</a>
+      </nav>
+    </header>
+    <main>
+      <slot />
+    </main>
+  </body>
+</html>

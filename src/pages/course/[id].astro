@@ -1,0 +1,10 @@
+---
+import Shell from "../../layouts/Shell.astro";
+
+// Stub: 200 for any id until the seed and services land (workstream F).
+const { id } = Astro.params;
+---
+
+<Shell title={`Course ${id}`}>
+  <h1>Course {id}</h1>
+</Shell>

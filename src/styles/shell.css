@@ -1,0 +1,7 @@
+/* Placeholder styling. Workstream F owns the real design. */
+body { margin: 0; font-family: system-ui, sans-serif; background: #f5f0e1; color: #111; }
+.site-header { background: #111; }
+.site-header nav { display: flex; flex-wrap: wrap; gap: 1rem; padding: 0.75rem 1rem; }
+.site-header a { color: #f2c200; }
+main { padding: 1rem; max-width: 72rem; margin: 0 auto; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #0057b8; outline-offset: 2px; }
