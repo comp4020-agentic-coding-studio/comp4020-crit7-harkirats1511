@@ -15,10 +15,11 @@ what the agent needs to carry from any of it is your call.
 Carried forward from earlier prototypes --- rules that held up across more than
 one build, not tied to any one week's content or framework.
 
-- Decisions here are made on merit, never on how much of the deadline is
-  left. If time runs short, cut scope --- skip a pass, drop a nice-to-have ---
-  never lower the bar on whatever is kept in. A rushed-looking page is a
-  worse outcome than a missing one.
+- Time and deadlines play no part in any decision here. Never recommend,
+  cut, shrink or reorder scope because of the clock, the cutoff or "how long
+  it will take", and don't mention time remaining when weighing options.
+  Choose what is best on merit and build it properly. Only the user raises
+  time.
 - Keep the dev server running (`pnpm dev`) so you see changes as you make them.
 - Run `pnpm check` before you push. Never commit a red state.
 - Open the page in a browser and look at it. The rendered page is the truth;
