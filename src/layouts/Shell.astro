@@ -1,13 +1,32 @@
 ---
-// Shared shell. Pages pass a title and provide their own single <h1> in the slot.
-// Workstream F owns this file, shell.css, and the enrolment sidebar; workstream G owns grid.css.
+// Shared shell (workstream F). Pages pass a title and provide their own single <h1> in the slot.
+// The Shell loads view state itself (draft banner, flash, enrolment sidebar); pages that already have it can pass `view`.
 import "../styles/shell.css";
 import "../styles/grid.css";
+import Sidebar from "../components/Sidebar.astro";
+import DraftBanner from "../components/DraftBanner.astro";
+import Flash from "../components/Flash.astro";
+import { getViewState, type ViewState } from "../lib/view";
 
 interface Props {
   title: string;
+  view?: ViewState;
+  /** Hide the enrolment sidebar (full-width pages). */
+  sidebar?: boolean;
 }
-const { title } = Astro.props;
+const { title, view: given, sidebar = true } = Astro.props;
+const view = given ?? getViewState(Astro.url);
+const path = Astro.url.pathname;
+const nav = [
+  ["/", "Home"],
+  ["/timetable/", "Timetable"],
+  ["/grid/", "Grid"],
+  ["/draft/", "Draft"],
+  ["/history/", "History"],
+  ["/auto-fix/", "Auto-fix"],
+  ["/preferences/", "Preferences"],
+] as const;
+const current = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
 ---
 
 <!doctype html>
@@ -15,23 +34,41 @@ const { title } = Astro.props;
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
+    <title>{title} | MyTimetable 2026</title>
   </head>
   <body>
+    <a class="skip-link" href="#main">Skip to main content</a>
     <header class="site-header">
+      <div class="brand-strip">
+        <a class="brand" href="/">MyTimetable <span>2026</span></a>
+        <span class="brand-term">{view.term?.name}</span>
+      </div>
       <nav aria-label="site">
-        <a href="/">Dashboard</a>
-        <a href="/timetable/">Timetable</a>
-        <a href="/grid/">Grid</a>
-        <a href="/draft/">Draft</a>
-        <a href="/auto-fix/">Auto-fix</a>
-        <a href="/history/">History</a>
-        <a href="/preferences/">Preferences</a>
-        <a href="/readme/">About</a>
+        <ul>
+          {
+            nav.map(([href, label]) => (
+              <li>
+                <a href={href} aria-current={current(href) ? "page" : undefined}>
+                  {label}
+                  {href === "/draft/" && view.draft ? <span class="nav-tag"> (open)</span> : null}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
       </nav>
     </header>
-    <main>
-      <slot />
-    </main>
+    <DraftBanner draft={view.draft} />
+    <div class:list={["layout", { "no-sidebar": !sidebar }]}>
+      {sidebar && <Sidebar view={view} />}
+      <main id="main" tabindex="-1">
+        <Flash msg={view.msg} error={view.error} detail={view.detail} />
+        <slot />
+      </main>
+    </div>
+    <footer class="site-footer">
+      <a href="/readme/">About this app</a>
+      <a href="/api/timetable.ics">Download timetable (.ics)</a>
+    </footer>
   </body>
 </html>

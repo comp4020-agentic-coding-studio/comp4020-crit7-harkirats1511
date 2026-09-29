@@ -1,0 +1,174 @@
+---
+// Dashboard: things that need doing, not prose. Clashes, unchosen activities, waitlist, draft, counts, recent changes.
+import { allClashes } from "../lib/engine/clash";
+import { resolveClash } from "../lib/engine/resolve";
+import type { Candidate, ClashDetail } from "../lib/engine/types";
+import { DEFAULT_STUDENT_ID, loadHistory, loadWaitlist } from "../lib/services/alloc";
+import { clashWhen, courseOfOption, optionFullName, optionName, type ViewState } from "../lib/view";
+import StateChip from "./StateChip.astro";
+interface Props {
+  view: ViewState;
+}
+const { view } = Astro.props;
+const { catalog, term, alloc, seats, draft } = view;
+
+const clashes = allClashes(alloc, catalog);
+const clashingGroups = new Set(clashes.flatMap((c) => [c.groupA, c.groupB]));
+const usable = (c: Candidate) => c.safe && !c.full;
+
+interface Side {
+  optionId: string;
+  code: string;
+  name: string;
+  ways: number;
+  options: number;
+}
+function side(c: ClashDetail, which: "A" | "B"): Side {
+  const optionId = which === "A" ? c.optionA : c.optionB;
+  const plan = resolveClash(optionId, alloc, catalog, seats);
+  const ways = plan.alternatives.filter(usable).length + plan.blockerMoves.reduce((n, b) => n + b.candidates.filter(usable).length, 0);
+  const options = (catalog.groups.get(plan.groupId)?.options.length ?? 1) - 1;
+  return { optionId, code: courseOfOption(catalog, optionId)?.code ?? "", name: optionFullName(catalog, optionId), ways, options };
+}
+const items = clashes.map((c) => {
+  const a = side(c, "A");
+  const b = side(c, "B");
+  const otherTimes = a.options + b.options;
+  return { c, a, b, ways: a.ways + b.ways, otherTimes };
+});
+
+const groups = [...catalog.groups.values()];
+const unchosen = groups.filter((g) => !alloc.has(g.id) && catalog.courses.has(g.courseId));
+const waitlist = loadWaitlist(DEFAULT_STUDENT_ID).filter((w) => catalog.options.has(w.optionId));
+const waitInfo = waitlist.map((w) => {
+  const o = catalog.options.get(w.optionId)!;
+  const left = o.capacity === null ? null : o.capacity - (seats.get(o.id) ?? 0);
+  return { w, o, left, held: alloc.get(o.groupId) === o.id };
+});
+const history = loadHistory(DEFAULT_STUDENT_ID, 4);
+const held = alloc.size;
+const total = groups.length;
+const stamp = (s: string) => s.slice(0, 16).replace("T", " ");
+---
+
+<div class="stats" role="group" aria-label="Timetable counts">
+  <dl>
+    <div><dt>Activities held</dt><dd>{held}<span> of {total}</span></dd></div>
+    <div><dt>In a clash</dt><dd class:list={{ bad: clashingGroups.size > 0 }}>{clashingGroups.size}</dd></div>
+    <div><dt>Unresolved clashes</dt><dd class:list={{ bad: clashes.length > 0 }}>{clashes.length}</dd></div>
+    <div><dt>Waitlisted</dt><dd>{waitlist.length}</dd></div>
+    <div><dt>Draft</dt><dd>{draft ? "Open" : "None"}</dd></div>
+  </dl>
+</div>
+
+<section class="panel" aria-labelledby="ai-clash">
+  <div class="panel-head"><h2 id="ai-clash">Clashes to resolve ({clashes.length})</h2><a href="/auto-fix/">Auto-fix all</a></div>
+  <div class="panel-body">
+    {
+      items.length === 0 ? (
+        <p><StateChip kind="ok" /> Your {draft ? "draft " : ""}timetable has no clashes.</p>
+      ) : (
+        <ul class="actions-list">
+          {items.map(({ c, a, b, ways, otherTimes }) => (
+            <li>
+              <p>
+                <StateChip kind="clash" /> <strong>{a.name}</strong> clashes with <strong>{b.name}</strong>
+              </p>
+              <p class="sub">{clashWhen(c, term)}</p>
+              {ways === 0 ? (
+                <p class="note">
+                  {otherTimes === 0
+                    ? "No other times exist for these lectures, so this clash cannot be moved away. You can only keep it or drop one."
+                    : "Every other time is full or would clash, so nothing can be moved right now. Auto-fix can confirm."}
+                </p>
+              ) : (
+                <p class="sub">{ways} way{ways === 1 ? "" : "s"} to resolve.</p>
+              )}
+              <p class="links">
+                {ways > 0 && <a class="btn btn-primary" href={`/course/${a.code}/?pick=${encodeURIComponent(a.optionId)}`}>Resolve from {a.name}</a>}
+                {ways > 0 && <a class="btn" href={`/course/${b.code}/?pick=${encodeURIComponent(b.optionId)}`}>Resolve from {b.name}</a>}
+                <a class="btn" href={`/grid/?focus=${encodeURIComponent(c.groupA)}`}>See on grid</a>
+                <a class="btn" href="/auto-fix/">Try auto-fix</a>
+              </p>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="ai-todo">
+  <div class="panel-head"><h2 id="ai-todo">Still to do</h2></div>
+  <div class="panel-body">
+    <ul class="actions-list">
+      {
+        unchosen.map((g) => (
+          <li>
+            <StateChip kind="select" label="Not chosen" /> <strong>{catalog.courses.get(g.courseId)?.code} {g.name}</strong> has no option picked.{" "}
+            <a href={`/course/${catalog.courses.get(g.courseId)?.code}/`}>Choose a time</a>
+          </li>
+        ))
+      }
+      {
+        waitInfo.map(({ o, left, held }) => (
+          <li>
+            {held ? (
+              <><StateChip kind="yours" /> Waitlisted option <strong>{optionFullName(catalog, o.id)}</strong> is now yours.</>
+            ) : left !== null && left > 0 ? (
+              <><StateChip kind="select" label="Seat free" /> <strong>{optionFullName(catalog, o.id)}</strong> now has {left} seat{left === 1 ? "" : "s"}.{" "}
+                <a href={`/course/${courseOfOption(catalog, o.id)?.code}/`}>Take it</a></>
+            ) : (
+              <><StateChip kind="full" label="Waitlisted" /> <strong>{optionFullName(catalog, o.id)}</strong> is still full.</>
+            )}
+          </li>
+        ))
+      }
+      <li>
+        {
+          draft ? (
+            <><StateChip kind="draft" label="Draft open" /> "{draft.name}" is open. <a href="/draft/">Review, apply or discard it</a>.</>
+          ) : (
+            <>
+              <StateChip kind="ok" label="No draft" /> Try changes without touching your real timetable.
+              <form method="post" action="/api/draft/new" class="inline-form">
+                <input type="hidden" name="next" value="/draft/" />
+                <button class="btn" type="submit">Start a draft</button>
+              </form>
+            </>
+          )
+        }
+      </li>
+      {unchosen.length === 0 && waitInfo.length === 0 && <li class="muted">Every activity has an option and nothing is waitlisted.</li>}
+    </ul>
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="ai-last">
+  <div class="panel-head"><h2 id="ai-last">Last changes</h2><a href="/history/">Full history</a></div>
+  <div class="panel-body">
+    {
+      history.length === 0 ? (
+        <p class="muted">No changes yet.</p>
+      ) : (
+        <ul class="actions-list compact">
+          {history.map((h) => (
+            <li>
+              <span class="nowrap sub">{stamp(h.createdAt)}</span> <strong>{h.source}</strong>:{" "}
+              {h.entries
+                .map((e) => {
+                  const g = catalog.groups.get(e.groupId);
+                  const cc = g && catalog.courses.get(g.courseId)?.code;
+                  const f = e.fromOptionId ? optionName(catalog, e.fromOptionId) : "none";
+                  const t = e.toOptionId ? optionName(catalog, e.toOptionId) : "none";
+                  return `${cc} ${f} to ${t}`;
+                })
+                .join("; ")}
+              {h.undoneByBatchId ? " (undone)" : ""}
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</section>

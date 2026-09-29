@@ -1,13 +1,19 @@
 ---
+import ActionItems from "../components/ActionItems.astro";
 import Shell from "../layouts/Shell.astro";
+import { getViewState } from "../lib/view";
 
 // Must stay SSR (never prerender). Deploy CI POSTs to `/`: a same-origin POST must not 403 and a cross-origin
 // POST must 403 (Astro's CSRF check runs before this). This benign handler just redirects.
 if (Astro.request.method === "POST") {
   return Astro.redirect("/", 303);
 }
+const view = getViewState(Astro.url);
 ---
 
-<Shell title="Dashboard">
-  <h1>Dashboard</h1>
+<Shell title="Home" view={view}>
+  <div class="page-title"><h1>Home: what needs your attention</h1></div>
+  <div class="page-body">
+    <ActionItems view={view} />
+  </div>
 </Shell>

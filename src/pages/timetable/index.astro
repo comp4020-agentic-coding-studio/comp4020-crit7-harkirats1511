@@ -1,7 +1,121 @@
 ---
+import SeatsMeter from "../../components/SeatsMeter.astro";
+import StateChip from "../../components/StateChip.astro";
+import WeeksLabel from "../../components/WeeksLabel.astro";
 import Shell from "../../layouts/Shell.astro";
+import { clashesFor } from "../../lib/engine/clash";
+import { clashWhen, DAY_NAMES, fmtRange, getViewState, optionFullName } from "../../lib/view";
+
+const view = getViewState(Astro.url);
+const { catalog, term, alloc, seats, draft } = view;
+const courses = [...catalog.courses.values()].sort((a, b) => a.code.localeCompare(b.code));
 ---
 
-<Shell title="Timetable">
-  <h1>Timetable</h1>
+<Shell title="Timetable" view={view}>
+  <div class="page-title">
+    <h1>Timetable</h1>
+    <span class="page-tools">
+      <a class="btn" href="/api/timetable.ics" download>Download iCal (.ics)</a>
+      <a class="btn" href="/grid/">Open grid</a>
+    </span>
+  </div>
+  <div class="page-body">
+    {draft && <p class="note">Showing your draft "{draft.name}", not your real timetable. The .ics download is always your real timetable.</p>}
+    {
+      courses.map((c) => (
+        <section class="panel" aria-labelledby={`c-${c.id}`}>
+          <div class="panel-head">
+            <h2 id={`c-${c.id}`}>{c.code} <span class="head-sub">{c.title}</span></h2>
+            <a href={`/course/${c.code}/`}>Course page</a>
+          </div>
+          <div class="table-wrap" tabindex="0" role="group" aria-label={`${c.code} activities`}>
+            <table class="data">
+              <caption class="sr-only">{c.code} activities and the option you hold</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Activity</th>
+                  <th scope="col">Held option</th>
+                  <th scope="col">Day</th>
+                  <th scope="col">Time</th>
+                  <th scope="col">Teaching weeks</th>
+                  <th scope="col">Location</th>
+                  <th scope="col">Seats left</th>
+                  <th scope="col">Status</th>
+                  <th scope="col">Actions</th>
+                </tr>
+              </thead>
+              {c.groups.map((g) => {
+                const oid = alloc.get(g.id);
+                const o = oid ? catalog.options.get(oid) : undefined;
+                if (!o) {
+                  return (
+                    <tbody>
+                      <tr>
+                        <th scope="row">{g.name}</th>
+                        <td colspan="6" class="muted">Not chosen</td>
+                        <td><StateChip kind="select" label="Not chosen" /></td>
+                        <td class="actions"><a class="btn btn-primary" href={`/course/${c.code}/`} aria-label={`Choose ${g.name} for ${c.code}`}>Choose</a></td>
+                      </tr>
+                    </tbody>
+                  );
+                }
+                const clashes = clashesFor(o.id, alloc, catalog);
+                const n = o.sessions.length;
+                const left = o.capacity === null ? null : Math.max(0, o.capacity - (seats.get(o.id) ?? 0));
+                return (
+                  <tbody class:list={{ "has-clash": clashes.length > 0 }}>
+                    {o.sessions.map((s, i) => (
+                      <tr>
+                        {i === 0 && <th scope="row" rowspan={n}>{g.name}</th>}
+                        {i === 0 && (
+                          <td rowspan={n}>
+                            <strong>{o.code}</strong>
+                            {o.overflow && <div class="sub"><StateChip kind="overflow" /></div>}
+                          </td>
+                        )}
+                        <td>{n > 1 && <span class="part">{s.part}</span>} {DAY_NAMES[s.day]}</td>
+                        <td class="nowrap">
+                          {fmtRange(s)}
+                          {(s.exempt || g.exemptFromClash) && <div class="sub"><StateChip kind="dropin" label="Drop-in, never clashes" /></div>}
+                        </td>
+                        <td><WeeksLabel mask={s.weeks} breakAfterWeek={term.breakAfterWeek} /></td>
+                        <td>{s.location ?? "Not published"}</td>
+                        {i === 0 && <td rowspan={n}><SeatsMeter capacity={o.capacity} left={left} /></td>}
+                        {i === 0 && (
+                          <td rowspan={n}>
+                            <StateChip kind={clashes.length === 0 ? "yours" : "clash"} />
+                          </td>
+                        )}
+                        {i === 0 && (
+                          <td rowspan={n} class="actions">
+                            {clashes.length > 0 && (
+                              <a class="btn btn-primary" href={`/course/${c.code}/?pick=${encodeURIComponent(o.id)}`} aria-label={`Resolve clash for ${c.code} ${g.name}`}>Resolve</a>
+                            )}
+                            <a class="btn" href={`/course/${c.code}/`} aria-label={`Course page for ${c.code} ${g.name}`}>Options</a>
+                            <a class="btn" href={`/grid/?focus=${encodeURIComponent(g.id)}`} aria-label={`Show ${c.code} ${g.name} on the grid`}>Grid</a>
+                            <form method="post" action="/api/drop">
+                              <input type="hidden" name="groupId" value={g.id} />
+                              {draft && <input type="hidden" name="draftId" value={draft.id} />}
+                              <button class="btn btn-danger" type="submit" aria-label={`Drop ${c.code} ${g.name} ${o.code}`}>Drop</button>
+                            </form>
+                          </td>
+                        )}
+                      </tr>
+                    ))}
+                    {clashes.map((cl) => (
+                      <tr class="clash-row">
+                        <td colspan="9">
+                          <StateChip kind="clash" /> {c.code} {g.name} {o.code} clashes with <strong>{optionFullName(catalog, cl.optionB)}</strong>: {clashWhen(cl, term)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                );
+              })}
+            </table>
+          </div>
+        </section>
+      ))
+    }
+  </div>
 </Shell>

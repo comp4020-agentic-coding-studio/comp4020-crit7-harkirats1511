@@ -11,6 +11,6 @@ const title = readme.getHeadings().find((h) => h.depth === 1)?.text ?? "README";
 const html = (await readme.compiledContent()).replace(/(src|href)="public\//g, '$1="/');
 ---
 
-<Shell title={title}>
-  <div set:html={html} />
+<Shell title={title} sidebar={false}>
+  <div class="prose" set:html={html} />
 </Shell>

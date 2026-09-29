@@ -1,0 +1,120 @@
+---
+// All options of one activity group with a STATE column, teaching weeks, seats and per-option actions.
+import { optionStates } from "../lib/engine/clash";
+import type { Course, Group } from "../lib/engine/types";
+import { clashWhen, DAY_NAMES, fmtRange, optionFullName, type ViewState } from "../lib/view";
+import SeatsMeter from "./SeatsMeter.astro";
+import StateChip from "./StateChip.astro";
+import WeeksLabel from "./WeeksLabel.astro";
+interface Props {
+  course: Course;
+  group: Group;
+  view: ViewState;
+  pick?: string | null;
+}
+const { course, group, view, pick } = Astro.props;
+const { catalog, term, alloc, seats, draft } = view;
+const states = optionStates(group.id, alloc, catalog, seats);
+const held = alloc.get(group.id) ?? null;
+---
+
+<div class="table-wrap" tabindex="0" role="group" aria-label={`${course.code} ${group.name} options`}>
+  <table class="data options">
+    <caption class="sr-only">Options for {course.code} {group.name}</caption>
+    <thead>
+      <tr>
+        <th scope="col">Option</th>
+        <th scope="col">State</th>
+        <th scope="col">Day</th>
+        <th scope="col">Time</th>
+        <th scope="col">Teaching weeks</th>
+        <th scope="col">Location</th>
+        <th scope="col">Staff</th>
+        <th scope="col">Seats left</th>
+        <th scope="col">Action</th>
+      </tr>
+    </thead>
+    {
+      group.options.map((o) => {
+        const st = states.get(o.id)!;
+        const n = o.sessions.length;
+        return (
+          <tbody class:list={{ picked: pick === o.id, held: st.kind === "yours" }} id={o.id}>
+            {o.sessions.map((s, i) => (
+              <tr>
+                {i === 0 && (
+                  <th scope="row" rowspan={n}>
+                    {group.name} {o.code}
+                    {pick === o.id && <span class="tag">You picked this</span>}
+                    {o.overflow && <span class="tag"><StateChip kind="overflow" /></span>}
+                  </th>
+                )}
+                {i === 0 && (
+                  <td rowspan={n}>
+                    <StateChip kind={st.kind} />
+                    {st.kind !== "full" && st.full && <div class="sub"><StateChip kind="full" /></div>}
+                    {st.clashes.map((c) => (
+                      <div class="clash-why">
+                        Clashes with <strong>{optionFullName(catalog, c.optionB)}</strong>: {clashWhen(c, term)}
+                      </div>
+                    ))}
+                  </td>
+                )}
+                <td>
+                  {n > 1 && <span class="part">{s.part}</span>} {DAY_NAMES[s.day]}
+                </td>
+                <td class="nowrap">
+                  {fmtRange(s)}
+                  {(s.exempt || group.exemptFromClash) && <div class="sub"><StateChip kind="dropin" label="Drop-in, never clashes" /></div>}
+                </td>
+                <td><WeeksLabel mask={s.weeks} breakAfterWeek={term.breakAfterWeek} /></td>
+                <td>{s.location ?? "Not published"}</td>
+                {i === 0 && <td rowspan={n}>{o.staff ?? "Not published"}</td>}
+                {i === 0 && (
+                  <td rowspan={n}>
+                    <SeatsMeter capacity={o.capacity} left={st.seatsLeft} />
+                  </td>
+                )}
+                {i === 0 && (
+                  <td rowspan={n} class="actions">
+                    {st.kind === "yours" ? (
+                      <span class="muted">Held</span>
+                    ) : (
+                      <>
+                        {st.kind === "clash" && (
+                          <a class="btn" href={`/course/${course.code}/?pick=${encodeURIComponent(o.id)}`} aria-label={`Resolve clash for ${group.name} ${o.code}`}>Resolve clash</a>
+                        )}
+                        {st.kind === "select" && (
+                          <form method="post" action="/api/select">
+                            <input type="hidden" name="optionId" value={o.id} />
+                            {draft && <input type="hidden" name="draftId" value={draft.id} />}
+                            <button class="btn btn-primary" type="submit" aria-label={`Select ${group.name} ${o.code}`}>Select</button>
+                          </form>
+                        )}
+                        {st.full && (
+                          <>
+                            <form method="post" action="/api/waitlist">
+                              <input type="hidden" name="optionId" value={o.id} />
+                              <button class="btn" type="submit" aria-label={`Join waitlist for ${group.name} ${o.code}`}>Join waitlist</button>
+                            </form>
+                            {held && (
+                              <form method="post" action="/api/swap">
+                                <input type="hidden" name="groupId" value={group.id} />
+                                <input type="hidden" name="wantOptionId" value={o.id} />
+                                <button class="btn" type="submit" aria-label={`Request swap into ${group.name} ${o.code}`}>Request swap</button>
+                              </form>
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        );
+      })
+    }
+  </table>
+</div>

@@ -1,0 +1,25 @@
+---
+import type { Draft } from "../lib/services/alloc";
+interface Props {
+  draft: Draft | null;
+}
+const { draft } = Astro.props;
+---
+
+{
+  draft && (
+    <div class="draft-banner" role="region" aria-label="Draft mode">
+      <p>
+        <strong>Draft mode.</strong> You are editing the draft "{draft.name}". Changes go to the draft, not your real
+        timetable, until you apply it.
+      </p>
+      <div class="draft-banner-actions">
+        <a href="/draft/">Review draft</a>
+        <form method="post" action="/api/draft/discard">
+          <input type="hidden" name="draftId" value={draft.id} />
+          <button type="submit" class="btn btn-small">Discard draft</button>
+        </form>
+      </div>
+    </div>
+  )
+}

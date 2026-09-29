@@ -1,10 +1,54 @@
 ---
+import OptionsTable from "../../components/OptionsTable.astro";
+import ResolvePanel from "../../components/ResolvePanel.astro";
 import Shell from "../../layouts/Shell.astro";
+import { findCourse, getViewState } from "../../lib/view";
 
-// Stub: 200 for any id until the seed and services land (workstream F).
-const { id } = Astro.params;
+const view = getViewState(Astro.url);
+const { catalog, alloc } = view;
+const course = findCourse(catalog, Astro.params.id ?? "");
+if (!course) Astro.response.status = 404;
+
+const pickId = Astro.url.searchParams.get("pick");
+const pick = course && pickId ? catalog.options.get(pickId) : undefined;
+const pickHere = pick && catalog.groups.get(pick.groupId)?.courseId === course?.id ? pick : undefined;
+const pickBad = Boolean(pickId && course && !pickHere);
 ---
 
-<Shell title={`Course ${id}`}>
-  <h1>Course {id}</h1>
-</Shell>
+{
+  !course ? (
+    <Shell title="Course not found" view={view}>
+      <div class="page-title"><h1>Course not found</h1></div>
+      <div class="page-body">
+        <p>There is no course "{Astro.params.id}" in this term. <a href="/timetable/">Back to your timetable</a>.</p>
+      </div>
+    </Shell>
+  ) : (
+    <Shell title={`${course.code} ${course.title}`} view={view}>
+      <div class="page-title">
+        <h1>{course.code} <span class="head-sub">{course.title}</span></h1>
+        <span class="page-tools"><a class="btn" href="/timetable/">Back to timetable</a></span>
+      </div>
+      <div class="page-body">
+        {course.aliases.length > 0 && (
+          <p class="aliases">Also listed as <strong>{course.aliases.join(", ")}</strong> (same classes and seats).</p>
+        )}
+        {pickBad && <p class="note">The option in the link is not part of this course, so there is nothing to resolve here.</p>}
+        {pickHere && <ResolvePanel course={course} optionId={pickHere.id} view={view} />}
+        {course.groups.map((g) => {
+          const held = alloc.get(g.id);
+          const heldOpt = held ? catalog.options.get(held) : undefined;
+          return (
+            <section class="panel" aria-labelledby={`g-${g.id}`}>
+              <div class="panel-head">
+                <h2 id={`g-${g.id}`}>{g.name} <span class="head-sub">{g.kind}{heldOpt ? `, you hold ${heldOpt.code}` : ", not chosen"}</span></h2>
+                <a href={`/grid/?focus=${encodeURIComponent(g.id)}`}>Show on grid</a>
+              </div>
+              <OptionsTable course={course} group={g} view={view} pick={pickHere?.id ?? null} />
+            </section>
+          );
+        })}
+      </div>
+    </Shell>
+  )
+}

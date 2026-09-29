@@ -1,0 +1,61 @@
+---
+// Left "Enrolment" panel: every course, each group with its held option and a status mark.
+import { allClashes } from "../lib/engine/clash";
+import { optionLabel, type ViewState } from "../lib/view";
+import StateChip from "./StateChip.astro";
+interface Props {
+  view: ViewState;
+}
+const { view } = Astro.props;
+const { catalog, alloc } = view;
+const clashing = new Set<string>();
+for (const c of allClashes(alloc, catalog)) {
+  clashing.add(c.groupA);
+  clashing.add(c.groupB);
+}
+const courses = [...catalog.courses.values()].sort((a, b) => a.code.localeCompare(b.code));
+const held = [...alloc.keys()].length;
+const total = courses.reduce((n, c) => n + c.groups.length, 0);
+---
+
+<aside class="sidebar" aria-label="Enrolment">
+  <details open id="enrol">
+    <summary>Enrolment <span class="count">{held} of {total} activities held{clashing.size ? `, ${clashing.size} clashing` : ""}</span></summary>
+    <ul class="enrol-courses">
+      {
+        courses.map((c) => (
+          <li>
+            <p class="enrol-course">
+              <a href={`/course/${c.code}/`}><strong>{c.code}</strong></a>
+              <span class="enrol-title">{c.title}</span>
+            </p>
+            <ul class="enrol-groups">
+              {c.groups.map((g) => {
+                const optId = alloc.get(g.id);
+                const opt = optId ? catalog.options.get(optId) : undefined;
+                const clash = clashing.has(g.id);
+                return (
+                  <li>
+                    <span class="enrol-group">{g.name}</span>
+                    {opt ? (
+                      <a class="enrol-opt" href={`/course/${c.code}/`}>{optionLabel(g, opt).replace(g.name + " ", "")}</a>
+                    ) : (
+                      <span class="enrol-opt enrol-none">none</span>
+                    )}
+                    {opt && (clash ? <StateChip kind="clash" /> : <StateChip kind="yours" label="OK" />)}
+                  </li>
+                );
+              })}
+            </ul>
+          </li>
+        ))
+      }
+    </ul>
+  </details>
+  <script is:inline>
+    if (window.matchMedia && window.matchMedia("(max-width: 800px)").matches) {
+      var d = document.getElementById("enrol");
+      if (d) d.removeAttribute("open");
+    }
+  </script>
+</aside>
