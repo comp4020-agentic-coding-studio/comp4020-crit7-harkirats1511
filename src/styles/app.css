@@ -422,7 +422,9 @@ h2.sec {
   border-radius: 7px;
   background: var(--tint, var(--inset));
   color: var(--fg, var(--ink));
+  font-family: var(--font-ui);
   font-size: 12px;
+  vertical-align: middle;
   font-weight: 700;
   letter-spacing: 0.02em;
   white-space: nowrap;

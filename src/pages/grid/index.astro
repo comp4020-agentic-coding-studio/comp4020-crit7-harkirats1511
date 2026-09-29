@@ -8,7 +8,7 @@ import WeekScrubber from "../../components/WeekScrubber.astro";
 import { getViewState, DAY_NAMES, fmtRange } from "../../lib/view";
 import { sessionOverlap } from "../../lib/engine/clash";
 import { weekToDate, weekBit } from "../../lib/engine/weeks";
-import { className, hourLabel, kindWord, roomName, weeksWords } from "../../lib/daybook";
+import { className, hourLabel, kindWord, nowInCanberra, roomName, weekView, weeksWords } from "../../lib/daybook";
 import { assignLanes, daysBeyond, freeLaneRun, dayTabs, fitAxis, maxLanes, minBoardPx, pickDefaultDay, type GridBlock } from "../../lib/grid-layout";
 import type { Group, Option, Session } from "../../lib/engine/types";
 
@@ -63,7 +63,9 @@ if (!unknownFocus) {
   const wantedRaw = Number(q.get("week"));
   let firstWeek = 1;
   for (let w = 1; w <= term.teachingWeeks; w++) if (activeMask & (1 << (w - 1))) { firstWeek = w; break; }
-  const wanted = Number.isInteger(wantedRaw) && wantedRaw !== 0 ? wantedRaw : firstWeek;
+  // Default: this teaching week when the shown classes run in it, else their first week.
+  const thisWeek = weekView(term, nowInCanberra()).week;
+  const wanted = Number.isInteger(wantedRaw) && wantedRaw !== 0 ? wantedRaw : activeMask & (1 << (thisWeek - 1)) ? thisWeek : firstWeek;
   week = Math.min(Math.max(wanted, 1), term.teachingWeeks);
   const bit = weekBit(week);
   const runs = (s: Session) => (s.weeks & bit) !== 0;
@@ -99,7 +101,7 @@ if (!unknownFocus) {
   const seatsText = (o: Option, yours: boolean) => {
     if (o.capacity === null) return "Seats not published";
     const left = Math.max(0, o.capacity - (seats.get(o.id) ?? 0));
-    return yours ? "Yours" : left === 0 ? "Full" : left === 1 ? "1 seat left" : `${left} seats left`;
+    return yours ? "You hold a seat" : left === 0 ? "Full" : left === 1 ? "1 seat left" : `${left} seats left`;
   };
 
   const make = (it: Item, kind: GridBlock["kind"], notes: string[]): GridBlock => {
