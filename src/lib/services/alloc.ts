@@ -347,6 +347,12 @@ export function loadCatalog(termId?: string): Catalog {
   return catalog;
 }
 
+/** The student's display name ("" when unknown). */
+export function loadStudentName(studentId: string): string {
+  const r = client.prepare("SELECT name FROM students WHERE id = ?").get(studentId) as Row | undefined;
+  return (r?.name as string | undefined) ?? "";
+}
+
 /** The student's REAL allocation (groupId -> optionId). */
 export function loadAllocation(studentId: string): Allocation {
   return readAlloc(studentId);
@@ -535,12 +541,27 @@ export function applyDraft(studentId: string, draftId: string): MutationResult {
   return finish(studentId, res, "draft");
 }
 
-/** Mark the draft discarded and remove its overlay rows. */
+/**
+ * Mark the draft discarded. Its overlay rows are kept (a discarded draft is never read: only the open draft is),
+ * so restoreDraft can undo a discard.
+ */
 export function discardDraft(studentId: string, draftId: string): MutationResult {
   const res = inTx((): MutationResult => {
     if (!draftRow(studentId, draftId)) return fail("no_draft", "That draft is not open.");
     client.prepare("UPDATE drafts SET status = 'discarded' WHERE id = ?").run(draftId);
-    client.prepare("DELETE FROM draft_allocations WHERE draft_id = ?").run(draftId);
+    return { ok: true, batchId: null, moves: [] };
+  });
+  return finish(studentId, res, "draft");
+}
+
+/** Undo a discard: reopen a discarded draft with its changes. Fails "invalid" while another draft is open. */
+export function restoreDraft(studentId: string, draftId: string): MutationResult {
+  const res = inTx((): MutationResult => {
+    const row = client.prepare("SELECT status FROM drafts WHERE id = ? AND student_id = ?").get(draftId, studentId) as Row | undefined;
+    if (!row || row.status !== "discarded") return fail("no_draft", "That draft cannot be restored.");
+    const open = client.prepare("SELECT 1 FROM drafts WHERE student_id = ? AND status = 'open' LIMIT 1").get(studentId);
+    if (open) return fail("invalid", "Another draft is open. Apply or discard it first.");
+    client.prepare("UPDATE drafts SET status = 'open' WHERE id = ?").run(draftId);
     return { ok: true, batchId: null, moves: [] };
   });
   return finish(studentId, res, "draft");

@@ -330,15 +330,28 @@ describe("drafts", () => {
     expect(svc.applyDraft(ME, d.id)).toMatchObject({ ok: false, code: "clash" });
   });
 
-  it("discard marks it discarded and removes overlay rows; further writes fail no_draft", () => {
+  it("discard marks it discarded; further writes fail no_draft; restore brings it back with its changes", () => {
     const d = svc.newDraft(ME);
     svc.selectOption(ME, "g2-b", { draftId: d.id });
     expect(svc.discardDraft(ME, d.id).ok).toBe(true);
-    expect(svc.loadDraftOverlay(d.id).size).toBe(0);
     expect(svc.getOpenDraft(ME)).toBeNull();
     expect(alloc()).toEqual({});
     expect(svc.selectOption(ME, "g2-b", { draftId: d.id })).toMatchObject({ ok: false, code: "no_draft" });
     expect(svc.discardDraft(ME, d.id)).toMatchObject({ ok: false, code: "no_draft" });
+    // undo the discard: the draft and its overlay come back; a second restore has nothing to restore
+    expect(svc.restoreDraft(ME, d.id).ok).toBe(true);
+    expect(svc.getOpenDraft(ME)?.id).toBe(d.id);
+    expect(svc.loadDraftOverlay(d.id).get("g2")).toBe("g2-b");
+    expect(svc.restoreDraft(ME, d.id)).toMatchObject({ ok: false, code: "no_draft" });
+    expect(svc.discardDraft(ME, d.id).ok).toBe(true);
+  });
+
+  it("restore refuses while another draft is open", () => {
+    const d1 = svc.newDraft(ME);
+    expect(svc.discardDraft(ME, d1.id).ok).toBe(true);
+    const d2 = svc.newDraft(ME);
+    expect(svc.restoreDraft(ME, d1.id)).toMatchObject({ ok: false, code: "invalid" });
+    expect(svc.discardDraft(ME, d2.id).ok).toBe(true);
   });
 
   it("another student's draft is not usable", () => {
