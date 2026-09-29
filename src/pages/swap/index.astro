@@ -1,11 +1,14 @@
 ---
 // Swap a time: up to three ranked times for one class (no overlaps first, then most seats to spare), each with
-// reasons computed from the student's real week, plus every time in a disclosure. "See my Thursday" previews the day.
+// reasons computed from the student's real week, plus every time in a disclosure. "See my Thursday" previews the
+// day. Picking a time is two steps: "Choose this" is a GET link that opens a confirm card (?pick=), and a POST
+// form there commits it — nothing moves on one click, and it all works without JavaScript.
 import Icon from "../../components/Icon.astro";
 import Timeline from "../../components/Timeline.astro";
 import Shell from "../../layouts/Shell.astro";
 import * as D from "../../lib/daybook";
 import { getViewState } from "../../lib/view";
+import "../../styles/swap.css";
 
 const view = getViewState(Astro.url);
 const { catalog, term, alloc, seats, draft } = view;
@@ -24,13 +27,18 @@ const groupId = current?.g.id ?? "";
 const judged = current ? D.judgeGroup(groupId, alloc, catalog, seats) : [];
 const held = judged.find((j) => j.held) ?? null;
 const cards = current ? D.rankSwaps(judged, events, groupId) : [];
-const sel = cards.find((c) => c.j.option.id === q.get("see")) ?? cards[0] ?? null;
+// ?pick= opens the confirm step, but only for a real, legal time of this group (a ranked card or another one) —
+// anything else (stale, full, clashing, or someone else's option id) is silently ignored.
+const pick = judged.find((j) => j.legal && j.option.id === q.get("pick")) ?? null;
+const seen = q.get("see") ? (cards.find((c) => c.j.option.id === q.get("see"))?.j ?? null) : null;
+const previewJ = pick ?? seen ?? cards[0]?.j ?? null;
 const kind = current ? D.kindWord(current.g).toLowerCase() : "";
 const hue = current ? D.courseHue(catalog, current.course.id) : "c1";
 const base = `/swap/?group=${encodeURIComponent(groupId)}`;
-const pv = sel?.j.slot ?? null;
+const pv = previewJ?.slot ?? null;
 const pvEvents = pv ? events.filter((e) => e.day === pv.day && e.groupId !== groupId) : [];
 const others = judged.filter((j) => !j.held);
+const lower = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 ---
 
 <Shell title="Swap a time" view={view}>
@@ -65,6 +73,24 @@ const others = judged.filter((j) => !j.held);
               </span>
             </p>
           )}
+          {pick && (
+            <section class="card confirm" id="confirm">
+              <h2 id="cf-h" tabindex="-1">Confirm your swap</h2>
+              <p>
+                {held ? `If you move: you’d swap your ${held.when} for ${pick.when}.` : `If you move: you’d take ${pick.when}.`}
+                {pick.info && ` It ${lower(pick.info)}.`}
+              </p>
+              <div class="row">
+                <form method="post" action="/api/select">
+                  <input type="hidden" name="optionId" value={pick.option.id} />
+                  {draft && <input type="hidden" name="draftId" value={draft.id} />}
+                  <input type="hidden" name="next" value={base} />
+                  <button class="btn solid" type="submit">Move to {pick.when}</button>
+                </form>
+                <a class="btn quiet" href={base}>Keep my time</a>
+              </div>
+            </section>
+          )}
           <h2 class="sec" style="margin-top:28px">Times that fit</h2>
           <p class="sec-lead">{D.SWAP_RULE}</p>
           {cards.length === 0 ? (
@@ -75,7 +101,7 @@ const others = judged.filter((j) => !j.held);
             <ol class="cards">
               {cards.map((c, i) => {
                 const s = c.j.slot!;
-                const on = sel?.j.option.id === c.j.option.id;
+                const on = previewJ?.option.id === c.j.option.id;
                 return (
                   <li class="card swc" data-sel={String(on)} style={`--i:${i}`}>
                     <div class="swc-top">
@@ -94,12 +120,9 @@ const others = judged.filter((j) => !j.held);
                       ))}
                     </ul>
                     <div class="row">
-                      <form method="post" action="/api/select">
-                        <input type="hidden" name="optionId" value={c.j.option.id} />
-                        {draft && <input type="hidden" name="draftId" value={draft.id} />}
-                        <input type="hidden" name="next" value={base} />
-                        <button class:list={["btn", { solid: on }]} type="submit" aria-label={`Swap to ${c.j.when}`}>Swap to this</button>
-                      </form>
+                      <a class:list={["btn", { solid: on }]} href={`${base}&pick=${encodeURIComponent(c.j.option.id)}#cf-h`} aria-label={`Choose ${c.j.when}`}>
+                        Choose this
+                      </a>
                       <a class="btn quiet" href={`${base}&see=${encodeURIComponent(c.j.option.id)}#pv-title`} aria-current={on ? "true" : undefined}>
                         See my {D.DAY_LONG[s.day]}
                       </a>
@@ -129,10 +152,10 @@ const others = judged.filter((j) => !j.held);
             </details>
           )}
         </div>
-        {sel && pv && (
+        {previewJ && pv && (
           <aside class="swap-side card tlcard" id="preview" aria-labelledby="pv-title">
             <div class="tl-head"><h2 id="pv-title" tabindex="-1">{D.DAY_LONG[pv.day]} with this swap</h2></div>
-            <p class="pvline">You’d swap {held?.when ?? "nothing"} for {sel.j.when}.</p>
+            <p class="pvline">You’d swap {held?.when ?? "nothing"} for {previewJ.when}.</p>
             <Timeline
               events={pvEvents}
               dayLong={D.DAY_LONG[pv.day]}

@@ -10,7 +10,7 @@ In MyTimetable a clashing class cannot be chosen until you find the class it cla
 
 - **My week** shows one day at a time: what is on, what is next, and the one thing that clashes, with honest options when it cannot be fixed.
 - **Change a class** draws every other time for a class on your day. Times that fit show the seats left; the rest say why not. Preview a time, then confirm the move.
-- **Swap a time** ranks the times that fit (no overlaps first, then most seats to spare) and explains each one, with a preview of the day it lands on.
+- **Swap a time** ranks the times that fit (no overlaps first, then most seats to spare) and explains each one. Choose one, check the preview, then confirm.
 
 Every change can be undone straight after, and History keeps the rest.
 

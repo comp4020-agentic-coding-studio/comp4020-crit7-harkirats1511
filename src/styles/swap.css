@@ -1,0 +1,7 @@
+/* Swap a time: page-specific styling. Everything else (.card, .confirm, .swc, .cards, .btn, .row, .badge, .why,
+   .now-card, .classpick, .allcard, .all-times, .pvline, .swap-grid...) is shared in app.css. This file only covers
+   what's specific to how the confirm step sits on this page: it appears above the ranked cards, in normal block
+   flow (not the .page grid's row gap that .confirm relies on elsewhere), so it needs its own spacing. */
+#confirm {
+  margin-top: 20px;
+}
