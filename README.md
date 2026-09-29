@@ -1,18 +1,27 @@
-# Your prototype
+# Daybook: MyTimetable clashes, fixed
 
-<!-- TEMPLATE: this file is yours, and the deployed app publishes it in full at
-     /readme/ --- a visitor reads it before they touch the app, and so does the
-     marker. Replace everything in it, this comment included. -->
+Daybook is a student-built replacement for the clash handling in ANU MyTimetable, running on my real Semester 2 2026 courses (COMP3900, COMP4020, COMP4650 and FINM1001).
 
-What this is, in a paragraph: the thing, and what it's for.
+## The problem
 
-## What good looks like here
+In MyTimetable a clashing class cannot be chosen until you find the class it clashes with and move that one first, by reading times and trying options one by one. It also ignores which weeks classes run, so it cannot tell a real clash from two classes that never meet.
 
-Say what good means for this app: what you decided, what you read or looked at
-while deciding, and what you chose not to build. The rules that decision
-produced live in `CLAUDE.md` and the checks that protect it live in `spec/`;
-this is the argument they came from, so say which parts of good are enforced and
-which are judgement calls.
+## How to use it
 
-Images go in `public/` and are linked relatively --- `![alt](public/before.png)`
---- which renders on GitHub and at `/readme/` alike.
+- **My week** shows one day at a time: what is on, what is next, and the one thing that clashes, with honest options when it cannot be fixed.
+- **Change a class** draws every other time for a class on your day. Times that fit show the seats left; the rest say why not. Preview a time, then confirm the move.
+- **Swap a time** ranks the times that fit (no overlaps first, then most seats to spare) and explains each one, with a preview of the day it lands on.
+
+Every change can be undone straight after, and History keeps the rest.
+
+## What good means here
+
+Clash detection is week-aware. Moves are checked as a whole, so moving one class never creates a new clash elsewhere. Optional drop-ins never clash. When nothing can fix a clash, the app says so instead of pretending. Everything works without JavaScript.
+
+## Run and test
+
+`pnpm dev` starts the app with a local database that seeds itself. `pnpm check` runs the typecheck, unit tests and the spec against the built server.
+
+## Limits
+
+The timetable data is transcribed from my own MyTimetable screenshots, not fetched from ANU. The app serves one student.
