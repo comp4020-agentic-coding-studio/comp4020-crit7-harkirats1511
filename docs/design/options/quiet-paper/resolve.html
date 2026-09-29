@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Margin, Change your Wednesday tutorial</title>
+<meta name="theme-color" content="#F5F0E4">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-flow="resolve" data-moving="c3900-tut" data-tail="30" data-lo="9" data-hi="18" data-verb="move">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap">
+  <a class="brand" href="index.html" aria-label="Margin, home">Margin<i>.</i></a>
+  <nav aria-label="Main">
+    <a href="index.html">My week</a>
+    <a href="resolve.html" aria-current="page">Change a class</a>
+    <a href="index.html#options">Clash options</a>
+  </nav>
+</div></header>
+<main id="main"><div class="wrap">
+  <div class="crumb" role="group" aria-label="Step 1 of 2"><span class="dot on"></span><span class="dot"></span><span class="label">Step 1 of 2</span></div>
+
+  <div class="step" id="step-pick">
+    <h1>Change your Wednesday tutorial</h1>
+    <p class="held"><b>Now: Wed 2&ndash;3:30pm</b>, Fulton Muir 2.03. Optional drop-in 3:30&ndash;4pm.</p>
+    <p class="rule-line">No overlaps first, then most seats to spare.</p>
+
+    <form onsubmit="return false">
+    <fieldset>
+      <legend class="label">Best times</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="slot" value="t01" data-day="1" data-start="9:00" data-end="10:30" data-label="Tue 9&ndash;10:30am" data-room="Fulton Muir 2.03" data-conseq="you&rsquo;d swap your Wednesday 2pm tutorial for Tuesday 9am." data-note="" checked>
+          <span class="face"><span class="radio"></span>
+            <span><span class="when">Tue 9&ndash;10:30am</span><span class="where">Fulton Muir 2.03</span><span class="why">No overlaps. Before your lectures.</span></span>
+            <span class="seats">7<small>seats</small></span></span></label>
+        <label class="choice"><input type="radio" name="slot" value="t07" data-day="4" data-start="9:00" data-end="10:30" data-label="Fri 9&ndash;10:30am" data-room="Fulton Muir 2.03" data-conseq="you&rsquo;d swap your Wednesday 2pm tutorial for Friday 9am." data-note="">
+          <span class="face"><span class="radio"></span>
+            <span><span class="when">Fri 9&ndash;10:30am</span><span class="where">Fulton Muir 2.03</span><span class="why">No overlaps. Adds a Friday trip.</span></span>
+            <span class="seats">1<small>seat</small></span></span></label>
+        <label class="choice"><input type="radio" name="slot" value="t06" data-day="2" data-start="16:00" data-end="17:30" data-label="Wed 4&ndash;5:30pm" data-room="Fulton Muir 2.03" data-conseq="you&rsquo;d move your Wednesday tutorial from 2pm to 4pm." data-note="It overlaps your optional COMP4650 drop-in (Wed 3&ndash;5pm).">
+          <span class="face"><span class="radio"></span>
+            <span><span class="when">Wed 4&ndash;5:30pm</span><span class="where">Fulton Muir 2.03</span><span class="why">Same day, 2 hours later. Overlaps your optional COMP4650 drop-in.</span></span>
+            <span class="seats">2<small>seats</small></span></span></label>
+      </div>
+    </fieldset>
+    </form>
+
+    <details class="more">
+      <summary>Show 5 more <svg class="i" aria-hidden="true"><use href="#i-down"/></svg></summary>
+      <div>
+        <button type="button" class="muted-row" aria-disabled="true" data-day="2" data-start="11:00" data-end="12:30"><span><b>Wed 11&ndash;12:30pm</b><span class="r">Overlaps your COMP4020 tutorial, which can&rsquo;t move (every other time is full).</span></span><span class="tag clash"><svg class="i" aria-hidden="true"><use href="#i-clash"/></svg>Overlaps</span></button>
+        <button type="button" class="muted-row" aria-disabled="true" data-day="1" data-start="15:00" data-end="16:30"><span><b>Tue 3&ndash;4:30pm</b><span class="r">Overlaps your COMP4650 lecture and FINM1001 workshop.</span></span><span class="tag clash"><svg class="i" aria-hidden="true"><use href="#i-clash"/></svg>Overlaps</span></button>
+        <button type="button" class="muted-row" aria-disabled="true" data-day="1" data-start="11:00" data-end="12:30"><span><b>Tue 11&ndash;12:30pm</b><span class="r">Full, and overlaps your FINM1001 lecture.</span></span><span class="tag full">Full</span></button>
+        <button type="button" class="muted-row" aria-disabled="true" data-day="4" data-start="11:00" data-end="12:30"><span><b>Fri 11&ndash;12:30pm</b></span><span class="tag full">Full</span></button>
+        <button type="button" class="muted-row" aria-disabled="true" data-day="3" data-start="16:00" data-end="17:30"><span><b>Thu 4&ndash;5:30pm</b></span><span class="tag full">Full</span></button>
+      </div>
+    </details>
+
+    <p class="conseq" id="conseq" aria-live="polite"></p>
+    <div class="actions" style="margin-top:0"><button class="btn" id="confirm" type="button"><span>Move</span></button></div>
+  </div>
+
+  <div class="step" id="step-done" hidden>
+    <h1 id="done-h" tabindex="-1">Moved to <span id="done-label"></span>.</h1>
+    <p class="lede">Your Tuesday lecture clash is unchanged.</p>
+    <div class="actions" style="margin-top:0"><a class="btn quiet" href="index.html">Back to my week</a></div>
+    <div class="toast" id="toast" role="status" hidden><span>Tutorial moved.</span><button type="button" id="undo">Undo</button></div>
+  </div>
+
+  <section class="preview breakout" aria-labelledby="pv-h">
+    <h2 class="label" id="pv-h">Your week if you move</h2>
+    <div id="wk"></div>
+    <p class="legend"><span><i class="lg-now"></i>Now</span><span><i class="lg-new"></i>New</span><span><i class="lg-opt"></i>Optional</span><span><i class="lg-clash"></i>Clash</span></p>
+  </section>
+</div>
+
+</main>
+<script src="app.js"></script>
+</body>
+</html>

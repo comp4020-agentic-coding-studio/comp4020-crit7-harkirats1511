@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Margin, My week</title>
+<meta name="theme-color" content="#F5F0E4">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-page="home">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap">
+  <a class="brand" href="index.html" aria-label="Margin, home">Margin<i>.</i></a>
+  <nav aria-label="Main">
+    <a href="index.html" aria-current="page">My week</a>
+    <a href="resolve.html">Change a class</a>
+    <a href="index.html#options">Clash options</a>
+  </nav>
+</div></header>
+<main id="main"><div class="wrap">
+
+  <p class="label date">Tuesday 29 September &middot; week 8</p>
+  <h1>You&rsquo;re clear this week except one thing.</h1>
+  <p class="lede">Your <strong>FINM1001</strong> and <strong>COMP4650</strong> lectures overlap by an hour every Tuesday. It can&rsquo;t be fixed, because each lecture runs once.</p>
+  <a class="btn" href="#options" data-opens="options" aria-expanded="false" aria-controls="options" role="button" id="see-options">See clash options <svg class="i" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+
+  <section class="panel" id="options" aria-labelledby="options-h" hidden>
+    <h2 class="label" id="options-h" tabindex="-1">Four things you can do</h2>
+    <ol class="opts">
+      <li><div><b>Keep it</b><span>Go to one, catch up on the other.</span></div></li>
+      <li><div><b>Drop one</b><span>Only if you can spare the course.</span></div></li>
+      <li><div><b>Check the recordings</b><span>Ask if either lecture is recorded.</span></div></li>
+      <li><div><b>Email the convenor</b><span>We wrote it for you. Paste it into your email.</span>
+        <div class="mail" id="mail">Hi, I&rsquo;m enrolled in FINM1001 and COMP4650. Their Tuesday lectures overlap from 1 to 2pm every week, and each runs only once. Could I have access to the recordings, or another arrangement?
+Thanks, Harkirat</div>
+        <button class="btn quiet" id="copy" type="button"><svg class="i" aria-hidden="true"><use href="#i-copy"/></svg><span>Copy email</span></button>
+      </div></li>
+    </ol>
+    <p class="hint">Press Escape to close.</p>
+  </section>
+
+  <section aria-labelledby="today-h">
+    <div class="sec-head"><h2 class="label" id="today-h">Today</h2></div>
+    <ul class="list">
+      <li class="nowline"><span>11:40</span><span class="rule"></span><em>Now. Free until 12.</em></li>
+      <li class="row next">
+        <div class="t">12pm<small>to 2pm</small></div>
+        <div><h3>FINM1001 Lecture</h3><p>Copland Lecture Theatre &middot; in 20 min</p></div>
+        <div class="tagcell"><span class="tag next">Next</span></div>
+      </li>
+      <li class="row">
+        <div class="t">1pm<small>to 3:30pm</small></div>
+        <div><h3>COMP4650 Lecture</h3><p>Robertson Theatre 1.28A</p></div>
+        <div class="tagcell"><span class="tag clash" data-icon="clash">Clash</span></div>
+      </li>
+      <li class="row">
+        <div class="t">4pm<small>to 5pm</small></div>
+        <div><h3>FINM1001 Workshop</h3><p>Copland Lecture Theatre</p></div>
+        <div class="tagcell"></div>
+      </li>
+    </ul>
+  </section>
+
+  <section class="breakout" aria-labelledby="week-h">
+    <div class="sec-head"><h2 class="label" id="week-h">This week</h2><span class="label">28 Sep &ndash; 2 Oct</span></div>
+    <div id="wk"></div>
+    <div id="detail" aria-live="polite"><p class="hint" style="margin:0">Tap a class for its room.</p></div>
+    <div class="wkactions"><button class="btn quiet" id="ics" type="button"><svg class="i" aria-hidden="true"><use href="#i-cal"/></svg>Add to my calendar (.ics)</button></div>
+  </section>
+</div></main>
+<script src="app.js"></script>
+</body>
+</html>

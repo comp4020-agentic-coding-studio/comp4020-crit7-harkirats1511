@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Margin, Swap your Thursday tutorial</title>
+<meta name="theme-color" content="#F5F0E4">
+<link rel="stylesheet" href="app.css">
+</head>
+<body data-flow="swap" data-moving="fin-tut" data-tail="0" data-lo="9" data-hi="18" data-verb="swap">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="wrap">
+  <a class="brand" href="index.html" aria-label="Margin, home">Margin<i>.</i></a>
+  <nav aria-label="Main">
+    <a href="index.html">My week</a>
+    <a href="resolve.html" aria-current="page">Change a class</a>
+    <a href="index.html#options">Clash options</a>
+  </nav>
+</div></header>
+<main id="main"><div class="wrap">
+  <div class="crumb" role="group" aria-label="Step 1 of 2"><span class="dot on"></span><span class="dot"></span><span class="label">Step 1 of 2</span></div>
+
+  <div class="step" id="step-pick">
+    <h1>Swap your Thursday tutorial</h1>
+    <p class="held"><b>Now: Thu 9&ndash;10am</b>, FINM1001, Marie Reay 3.02. Your Tuesday lecture clash won&rsquo;t change.</p>
+    <p class="rule-line">No overlaps first, then most seats to spare.</p>
+
+    <form onsubmit="return false">
+    <fieldset>
+      <legend class="label">Better than what you have</legend>
+      <div class="choices">
+        <label class="choice"><input type="radio" name="slot" value="f09" data-day="3" data-start="17:00" data-end="18:00" data-label="Thu 5&ndash;6pm" data-room="Marie Reay 3.02" data-conseq="you&rsquo;d swap Thursday 9am for Thursday 5pm." data-note="" checked>
+          <span class="face"><span class="radio"></span>
+            <span><span class="when">Thu 5&ndash;6pm</span><span class="where">Marie Reay 3.02</span><span class="why">No overlaps. Same day, but it runs to 6pm.</span></span>
+            <span class="seats">3<small>seats</small></span></span></label>
+        <label class="choice"><input type="radio" name="slot" value="f06" data-day="2" data-start="17:00" data-end="18:00" data-label="Wed 5&ndash;6pm" data-room="Marie Reay 3.02" data-conseq="you&rsquo;d swap Thursday 9am for Wednesday 5pm." data-note="">
+          <span class="face"><span class="radio"></span>
+            <span><span class="when">Wed 5&ndash;6pm</span><span class="where">Marie Reay 3.02</span><span class="why">No overlaps. Thursday starts at 11. It&rsquo;s the last seat.</span></span>
+            <span class="seats">1<small>seat</small></span></span></label>
+        <label class="choice"><input type="radio" name="slot" value="f07" data-day="2" data-start="16:00" data-end="17:00" data-label="Wed 4&ndash;5pm" data-room="Marie Reay 3.02" data-conseq="you&rsquo;d swap Thursday 9am for Wednesday 4pm." data-note="It overlaps your optional COMP4650 drop-in (Wed 3&ndash;5pm).">
+          <span class="face"><span class="radio"></span>
+            <span><span class="when">Wed 4&ndash;5pm</span><span class="where">Marie Reay 3.02</span><span class="why">Thursday starts at 11. Overlaps your optional COMP4650 drop-in.</span></span>
+            <span class="seats">3<small>seats</small></span></span></label>
+      </div>
+    </fieldset>
+    </form>
+
+    <details class="more">
+      <summary>Show all times <svg class="i" aria-hidden="true"><use href="#i-down"/></svg></summary>
+      <div>
+        <button type="button" class="muted-row" aria-disabled="true" data-day="2" data-start="14:00" data-end="15:00"><span><b>Wed 2&ndash;3pm</b></span><span class="tag full">Full</span></button>
+        <button type="button" class="muted-row" aria-disabled="true" data-day="2" data-start="15:00" data-end="16:00"><span><b>Wed 3&ndash;4pm</b></span><span class="tag full">Full</span></button>
+        <button type="button" class="muted-row" aria-disabled="true" data-day="1" data-start="17:00" data-end="18:00"><span><b>Tue 5&ndash;6pm</b></span><span class="tag full">Full</span></button>
+        <button type="button" class="muted-row" aria-disabled="true" data-day="3" data-start="10:00" data-end="11:00"><span><b>Thu 10&ndash;11am</b></span><span class="tag full">Full</span></button>
+        <button type="button" class="muted-row" aria-disabled="true" data-day="3" data-start="11:00" data-end="12:00"><span><b>Thu 11am&ndash;12pm</b></span><span class="tag full">Full</span></button>
+        <button type="button" class="muted-row" aria-disabled="true" data-day="3" data-start="16:00" data-end="17:00"><span><b>Thu 4&ndash;5pm</b></span><span class="tag full">Full</span></button>
+      </div>
+    </details>
+
+    <p class="conseq" id="conseq" aria-live="polite"></p>
+    <div class="actions" style="margin-top:0"><button class="btn" id="confirm" type="button"><span>Swap</span></button></div>
+  </div>
+
+  <div class="step" id="step-done" hidden>
+    <h1 id="done-h" tabindex="-1">Swapped to <span id="done-label"></span>.</h1>
+    <p class="lede">Your Tuesday lecture clash is unchanged.</p>
+    <div class="actions" style="margin-top:0"><a class="btn quiet" href="index.html">Back to my week</a></div>
+    <div class="toast" id="toast" role="status" hidden><span>Tutorial swapped.</span><button type="button" id="undo">Undo</button></div>
+  </div>
+
+  <section class="preview breakout" aria-labelledby="pv-h">
+    <h2 class="label" id="pv-h">Your week if you swap</h2>
+    <div id="wk"></div>
+    <p class="legend"><span><i class="lg-now"></i>Now</span><span><i class="lg-new"></i>New</span><span><i class="lg-opt"></i>Optional</span><span><i class="lg-clash"></i>Clash</span></p>
+  </section>
+</div>
+
+</main>
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daybook: Change a class</title>
+<meta name="description" content="Look at other times for your Wednesday tutorial.">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="app.css">
+<script src="app.js" defer></script>
+</head>
+<body data-page="resolve">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="brand" href="index.html"><span data-i="mark"></span>Daybook</a>
+  <nav class="nav" aria-label="Main">
+    <a href="index.html">My week</a>
+    <a href="resolve.html" aria-current="page">Change a class</a>
+    <a href="swap.html">Swap a time</a>
+  </nav>
+</header>
+<main id="main" class="wrap has-sheet">
+<div class="page wide">
+ <div class="main">
+  <div class="g-greet">
+    <h1 class="greet">Change your Wednesday tutorial</h1>
+    <p class="greet-sub">COMP3900 &middot; <span id="now-line">Now: Wed 2&ndash;3:30pm</span></p>
+  </div>
+<div class="strip g-strip" id="strip" role="tablist" aria-label="Days this week">
+  <button type="button" class="chip" role="tab" id="chip-Mon" data-day="Mon" aria-selected="false" aria-controls="tl-panel"><span class="dn">Mon</span><span class="dd">28</span></button>
+  <button type="button" class="chip" role="tab" id="chip-Tue" data-day="Tue" aria-selected="false" aria-controls="tl-panel" aria-label="Tuesday 29"><span class="dn">Tue</span><span class="dd">29</span></button>
+  <button type="button" class="chip" role="tab" id="chip-Wed" data-day="Wed" aria-selected="true" aria-controls="tl-panel"><span class="dn">Wed</span><span class="dd">30</span></button>
+  <button type="button" class="chip" role="tab" id="chip-Thu" data-day="Thu" aria-selected="false" aria-controls="tl-panel"><span class="dn">Thu</span><span class="dd">1</span></button>
+  <button type="button" class="chip" role="tab" id="chip-Fri" data-day="Fri" aria-selected="false" aria-controls="tl-panel"><span class="dn">Fri</span><span class="dd">2</span></button>
+</div>
+  <section class="wk g-wk" id="wk" aria-label="Every day at a glance"></section>
+  <section class="card tlcard g-tl" id="tl-panel" role="tabpanel" aria-labelledby="chip-Wed">
+    <div class="tl-head"><h2 id="tl-title">Wednesday</h2><span id="tl-sub"></span></div>
+    <div id="tl-host"></div>
+  </section>
+ </div>
+ <div class="rail">
+  <section class="card confirm" id="confirm" aria-labelledby="cf-h" hidden>
+    <h2 id="cf-h">If you move</h2>
+    <p id="cf-text"></p>
+    <div class="row"><button type="button" class="btn solid" id="cf-go">Move here</button><button type="button" class="btn quiet" id="cf-cancel">Keep my time</button></div>
+  </section>
+  <div class="scrim" id="scrim" hidden></div>
+  <aside class="panel" id="panel" data-state="peek" aria-labelledby="panel-h">
+    <button type="button" class="sheet-bar" aria-expanded="false" aria-controls="panel-body"><span><span id="sheet-count">3 times fit</span><span data-i="up"></span></span></button>
+    <div class="panel-body" id="panel-body">
+      <h2 id="panel-h">Other times</h2>
+      <p class="sub">Ringed days have a time that fits.</p>
+      <p class="note"><span data-i="lock"></span><span>Your COMP4020 tutorial can&rsquo;t move: every other time is full.</span></p>
+      <h3>These fit</h3>
+      <ul id="fits"></ul>
+      <details class="more"><summary><span>Show <span id="more-count">5</span> more times</span></summary><ul id="more-list"></ul></details>
+    </div>
+  </aside>
+ </div>
+</div>
+</main>
+</body>
+</html>

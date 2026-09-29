@@ -1,0 +1,38 @@
+/* Daybook tokens. Contrast ratios are measured (WCAG relative luminance), see README. */
+:root {
+  color-scheme: light;
+  /* surfaces */
+  --page: #F2ECDF;        /* sand */
+  --surface: #FAF6EC;     /* oat */
+  --inset: #EFE8D8;
+  --line: #DCD2BC;        /* hairline */
+  --line-strong: #B9AD93;
+  /* text */
+  --ink: #22251F;         /* 14.4:1 on surface */
+  --ink-2: #55503F;       /* 7.5:1 on surface */
+  /* the single strong accent: deep teal */
+  --primary: #0E4F4F;     /* white on it 9.3:1 */
+  --primary-tint: #DCEBE6;
+  --focus: #0E4F4F;
+  /* clash */
+  --clash: #A32A1B;       /* 6.7:1 on surface, 5.6:1 on its tint */
+  --clash-tint: #F6DDD5;
+  /* course hues: fg for stems/tags text, tint for tag fill */
+  --hci: #3E5A75;  --hci-tint: #DEE5EB;
+  --ags: #6B5320;  --ags-tint: #EFE4C4;
+  --doc: #6E4360;  --doc-tint: #ECDDE6;
+  --fin: #4A6035;  --fin-tint: #E0E7D3;
+  --caution: #7A5200;     /* 6.4:1 on oat: calm ochre for cautions, never red */
+  /* type. Preferred web fonts (not loaded): DM Sans / Nunito Sans for UI, Fraunces for the greeting */
+  --font-ui: "DM Sans", "Nunito Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  /* shape + space */
+  --r: 14px;
+  --r-sm: 10px;
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 24px; --s6: 32px; --s7: 48px;
+  /* motion */
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --spring: cubic-bezier(.34, 1.36, .64, 1);
+  --hr: 72px; /* timeline pixels per hour */
+}
+@media (max-width: 599px) { :root { --hr: 84px; } }

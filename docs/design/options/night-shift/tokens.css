@@ -1,0 +1,90 @@
+/* Night Shift tokens. Dark is the hero; the same names re-map for light. */
+:root {
+  color-scheme: dark;
+  --bg: #16140f;          /* warm ink, not black */
+  --surface: #1e1b15;
+  --surface-2: #282419;
+  --raised: #322d21;
+  --line: #3a3427;
+  --line-strong: #6b6350;
+  --text: #efe9dc;
+  --text-2: #c9c0ac;
+  --text-3: #9a917e;
+  --gold: #e3b04b;        /* reserved: today, now, yours */
+  --gold-ink: #1a1408;
+  --clash: #ff9a8b;
+  --clash-line: #ff9a8b;
+  --hatch: rgba(255, 130, 110, .6);
+  --clash-bg: rgba(255, 110, 90, .12);
+  --focus: #efe9dc;
+  --btn-bg: #efe9dc;
+  --btn-ink: #16140f;
+  /* course hues: muted, with a thin bright top edge */
+  --h-lec: #68bab3;
+  --h-grp: #d9a06f;
+  --fill-mix: 24%;
+  --shadow: 0 8px 28px rgba(0,0,0,.45);
+
+  --sans: "Geist", "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* Geist / Plex only if installed */
+  --mono: "JetBrains Mono", "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  --ease: cubic-bezier(.32, .72, 0, 1);
+  --t1: 160ms;
+  --t2: 220ms;
+  --topbar-h: 52px;
+  --drawer-w: 340px;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f3eee2;
+  --surface: #fbf8f0;
+  --surface-2: #f0eadb;
+  --raised: #e7dfcc;
+  --line: #d8cfb9;
+  --line-strong: #8a8068;
+  --text: #211d14;
+  --text-2: #4c4535;
+  --text-3: #665e4b;
+  --gold: #855900;
+  --gold-ink: #fff8e6;
+  --clash: #a8241b;
+  --clash-line: #b3261e;
+  --hatch: rgba(179, 38, 30, .5);
+  --clash-bg: rgba(179, 38, 30, .07);
+  --focus: #211d14;
+  --btn-bg: #211d14;
+  --btn-ink: #f3eee2;
+  --h-lec: #16706a;
+  --h-grp: #a4541f;
+  --fill-mix: 13%;
+  --shadow: 0 8px 24px rgba(60,45,10,.18);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #f3eee2;
+    --surface: #fbf8f0;
+    --surface-2: #f0eadb;
+    --raised: #e7dfcc;
+    --line: #d8cfb9;
+    --line-strong: #8a8068;
+    --text: #211d14;
+    --text-2: #4c4535;
+    --text-3: #665e4b;
+    --gold: #855900;
+    --gold-ink: #fff8e6;
+    --clash: #a8241b;
+    --clash-line: #b3261e;
+    --hatch: rgba(179, 38, 30, .5);
+    --clash-bg: rgba(179, 38, 30, .07);
+    --focus: #211d14;
+    --btn-bg: #211d14;
+    --btn-ink: #f3eee2;
+    --h-lec: #16706a;
+    --h-grp: #a4541f;
+    --fill-mix: 13%;
+    --shadow: 0 8px 24px rgba(60,45,10,.18);
+  }
+}

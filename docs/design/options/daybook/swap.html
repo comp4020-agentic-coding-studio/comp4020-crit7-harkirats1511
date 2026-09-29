@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daybook: Swap a time</title>
+<meta name="description" content="Better times for your finance tutorial.">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="app.css">
+<script src="app.js" defer></script>
+</head>
+<body data-page="swap">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="brand" href="index.html"><span data-i="mark"></span>Daybook</a>
+  <nav class="nav" aria-label="Main">
+    <a href="index.html">My week</a>
+    <a href="resolve.html">Change a class</a>
+    <a href="swap.html" aria-current="page">Swap a time</a>
+  </nav>
+</header>
+<main id="main" class="wrap">
+<div class="swap-grid">
+ <div>
+  <h1 class="greet">Swap your FINM1001 tutorial</h1>
+  <p class="now-card"><span data-i="clock"></span><span><span class="eyebrow">You have</span><br><span class="tt" id="now-time">Thu 9&ndash;10am</span> &middot; Marie Reay 3.02</span></p>
+  <h2 class="sec">Better than Thursday 9am</h2>
+  <p class="greet-sub">No overlaps first, then most seats to spare.</p>
+  <ol class="cards" id="cards"></ol>
+  <details class="more card allcard"><summary>Show all times</summary><ul class="all-times" id="all-list"></ul></details>
+ </div>
+ <aside class="swap-side card tlcard" aria-labelledby="pv-title">
+  <div class="tl-head"><h2 id="pv-title">Thursday with this swap</h2></div>
+  <p class="pvline" id="pv-line"></p>
+  <div id="pv-host"></div>
+ </aside>
+</div>
+</main>
+</body>
+</html>

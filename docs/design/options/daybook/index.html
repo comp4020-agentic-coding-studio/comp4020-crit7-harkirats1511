@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daybook: My week</title>
+<meta name="description" content="Your week, one day at a time.">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="app.css">
+<script src="app.js" defer></script>
+</head>
+<body data-page="home">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <a class="brand" href="index.html"><span data-i="mark"></span>Daybook</a>
+  <nav class="nav" aria-label="Main">
+    <a href="index.html" aria-current="page">My week</a>
+    <a href="resolve.html">Change a class</a>
+    <a href="swap.html">Swap a time</a>
+  </nav>
+</header>
+<main id="main" class="wrap">
+<div class="page">
+ <div class="main">
+  <div class="g-greet">
+    <h1 class="greet">Morning, Harkirat. One thing to sort out.</h1>
+    <p class="greet-sub">Tuesday 29 September &middot; Week 8</p>
+  </div>
+  <section class="next g-next" aria-label="Next up">
+    <span class="ic"><span data-i="clock"></span></span>
+    <p><b>FINM1001 Lecture</b> in 20 min<br><span class="sub">Copland Lecture Theatre</span></p>
+  </section>
+<div class="strip g-strip" id="strip" role="tablist" aria-label="Days this week">
+  <button type="button" class="chip" role="tab" id="chip-Mon" data-day="Mon" aria-selected="false" aria-controls="tl-panel"><span class="dn">Mon</span><span class="dd">28</span></button>
+  <button type="button" class="chip" role="tab" id="chip-Tue" data-day="Tue" aria-selected="true" aria-controls="tl-panel" aria-label="Tuesday 29, today, has a clash"><span class="dn">Tue</span><span class="dd">29</span><span class="mk"></span><span class="sr"> clash</span></button>
+  <button type="button" class="chip" role="tab" id="chip-Wed" data-day="Wed" aria-selected="false" aria-controls="tl-panel"><span class="dn">Wed</span><span class="dd">30</span></button>
+  <button type="button" class="chip" role="tab" id="chip-Thu" data-day="Thu" aria-selected="false" aria-controls="tl-panel"><span class="dn">Thu</span><span class="dd">1</span></button>
+  <button type="button" class="chip" role="tab" id="chip-Fri" data-day="Fri" aria-selected="false" aria-controls="tl-panel"><span class="dn">Fri</span><span class="dd">2</span></button>
+</div>
+  <section class="card tlcard g-tl" id="tl-panel" role="tabpanel" aria-labelledby="chip-Tue">
+    <div class="tl-head"><h2 id="tl-title">Tuesday</h2><span id="tl-sub"></span></div>
+    <div id="tl-host"></div>
+    <div class="ics"><button type="button" class="btn quiet" id="act-ics"><span data-i="cal"></span>Add to my calendar (.ics)</button></div>
+  </section>
+ </div>
+ <div class="rail">
+  <section class="card problem g-problem" aria-labelledby="pb-h">
+    <div class="pb-head"><span class="pb-ico"><span data-i="alert"></span></span><h2 id="pb-h">Your Tuesday lectures overlap</h2></div>
+    <p class="lead">FINM1001 and COMP4650 overlap 1&ndash;2pm. Each runs once, so this can&rsquo;t be fixed.</p>
+    <ul class="opts">
+      <li><button type="button" class="opt" id="act-keep"><span data-i="keep"></span>Keep both</button></li>
+      <li><button type="button" class="opt" id="act-drop" aria-expanded="false" aria-controls="dropchoice"><span data-i="drop"></span>Drop one</button>
+        <div class="dropchoice" id="dropchoice" hidden>
+          <button type="button" class="opt" data-msg="FINM1001 lecture dropped."><span data-i="x"></span>Drop FINM1001</button>
+          <button type="button" class="opt" data-msg="COMP4650 lecture dropped."><span data-i="x"></span>Drop COMP4650</button>
+        </div></li>
+      <li><button type="button" class="opt" id="act-rec"><span data-i="play"></span>Watch the recording</button></li>
+    </ul>
+    <div class="emailbox">
+      <p class="eyebrow">Email to the convenor</p>
+      <p class="txt" id="email-text">Hi, my FINM1001 and COMP4650 lectures overlap on Tuesdays, 1&ndash;2pm. Is there a recording? Thanks, Harkirat</p>
+      <button type="button" class="btn" id="act-mail"><span data-i="copy"></span>Copy email</button>
+    </div>
+  </section>
+  <section class="glance g-glance" aria-labelledby="gl-h">
+    <h2 id="gl-h">This week</h2>
+    <div class="mini" id="mini"></div>
+  </section>
+ </div>
+</div>
+</main>
+</body>
+</html>

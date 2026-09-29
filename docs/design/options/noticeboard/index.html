@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F5EFE2">
+<title>My week · Weekbook</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<symbol id="i-cal" viewBox="0 0 20 20"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2.5v3M13 2.5v3"/></symbol>
+<symbol id="i-swap" viewBox="0 0 20 20"><path d="M4 7h11M12 4l3 3-3 3M16 13H5M8 10l-3 3 3 3"/></symbol>
+<symbol id="i-edit" viewBox="0 0 20 20"><path d="M4 16h3l8.5-8.5a1.4 1.4 0 0 0 0-2l-1-1a1.4 1.4 0 0 0-2 0L4 13z"/><path d="M11.5 5.5l3 3"/></symbol>
+<symbol id="i-alert" viewBox="0 0 20 20"><path d="M10 3.2 18 16.5H2z"/><path d="M10 8v4M10 14.2v.01"/></symbol>
+<symbol id="i-lock" viewBox="0 0 20 20"><rect x="4.5" y="9" width="11" height="8" rx="1.5"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/></symbol>
+<symbol id="i-check" viewBox="0 0 20 20"><path d="m4 10.5 4 4 8-9"/></symbol>
+<symbol id="i-minus" viewBox="0 0 20 20"><path d="M5 10h10"/></symbol>
+<symbol id="i-chev" viewBox="0 0 20 20"><path d="m5 8 5 5 5-5"/></symbol>
+<symbol id="i-copy" viewBox="0 0 20 20"><rect x="7" y="7" width="9.5" height="10" rx="1.5"/><path d="M13 7V5.5A1.5 1.5 0 0 0 11.5 4h-6A1.5 1.5 0 0 0 4 5.5v7A1.5 1.5 0 0 0 5.5 14H7"/></symbol>
+<symbol id="i-person" viewBox="0 0 20 20"><circle cx="10" cy="7" r="3"/><path d="M4 16.5c.8-3 3-4.5 6-4.5s5.2 1.5 6 4.5"/></symbol>
+<symbol id="i-full" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7"/><path d="m7.5 7.5 5 5M12.5 7.5l-5 5"/></symbol>
+<symbol id="i-down" viewBox="0 0 20 20"><path d="M10 3.5v10M5.5 9.5 10 14l4.5-4.5M4 17h12"/></symbol>
+</defs></svg>
+<a class="skip" href="#main">Skip to content</a>
+<header class="strip"><div class="strip__in">
+<a class="brand" href="index.html">Weekbook</a>
+<nav class="nav" aria-label="Main"><a href="index.html" aria-current="page"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-cal"/></svg><span>My week</span></a><a href="resolve.html"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-edit"/></svg><span>Change a class</span></a><a href="swap.html"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-swap"/></svg><span>Swap a class</span></a></nav>
+</div></header>
+<main id="main">
+
+<div class="head"><h1>My week</h1><p class="eyebrow">Week 8 · 28 Sep – 2 Oct</p><a class="btn btn--quiet head__ics" href="week-8.ics" download><svg class="i" aria-hidden="true" focusable="false"><use href="#i-down"/></svg>Add to my calendar (.ics)</a></div>
+<div class="bar">
+<p class="next"><span class="next__label">Next up</span><span class="next__time">12pm</span><span class="next__what">FINM1001 Lecture, Copland Theatre <span class="mins">in 20 min</span></span></p>
+<p class="clashline" id="clashline"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-alert"/></svg><span>One clash on Tuesday, 1–2pm.</span></p>
+<button type="button" class="btn" id="clash-btn" aria-expanded="false" aria-controls="clash-panel">See your options <svg class="i chev" aria-hidden="true" focusable="false"><use href="#i-chev"/></svg></button>
+</div>
+<section class="clash__panel" id="clash-panel" role="region" aria-labelledby="cp-h" hidden>
+<h2 id="cp-h" tabindex="-1">This one can’t be moved</h2>
+<p>Both lectures run once a week, so neither has another time.</p>
+<ul class="opts">
+<li><div><b>Keep both</b><span class="d">Go to one, catch up on the other.</span><span class="cons" id="cons-keep" hidden>You’d miss an hour of one lecture each Tuesday, 1–2pm.</span></div><button type="button" class="btn btn--quiet" id="keep-btn" aria-pressed="false">Keep it</button></li>
+<li><div><b>Drop one</b><span class="d">FINM1001 or COMP4650.</span><span class="cons" id="cons-drop" hidden>Dropping either removes 3 classes from your week and ends the clash.</span></div><button type="button" class="btn btn--quiet" id="drop-btn" aria-expanded="false" aria-controls="cons-drop">See what changes</button></li>
+<li><div><b>Watch the recordings</b><span class="d">No link on file. Ask your convenor for it.</span></div><button type="button" class="btn btn--quiet" disabled>No link yet</button></li>
+<li><div><b>Ask your convenor</b><span class="d">We’ve written the email for you.</span></div><button type="button" class="btn" data-copy="email-text"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-copy"/></svg><span>Copy email</span></button></li>
+</ul>
+<p class="email" id="email-text">Hi, I’m enrolled in FINM1001 and COMP4650. The Tuesday lectures overlap by an hour every week (FINM1001 12–2pm, COMP4650 1–3:30pm) and each runs only once. Could you tell me how you’d like me to handle the overlap? Thanks, Harkirat</p>
+</section>
+<div class="sr" id="live" role="status" aria-live="polite"></div>
+<div class="cal-wrap"><div class="daytabs" role="group" aria-label="Choose a day"><button type="button" class="" data-day="mon" aria-pressed="false" aria-label="Monday 28"><span class="n">Mon</span><span class="d">28</span></button><button type="button" class="has-clash" data-day="tue" aria-pressed="true" aria-label="Tuesday 29 (today), has a clash"><span class="n">Tue</span><span class="d">29</span></button><button type="button" class="" data-day="wed" aria-pressed="false" aria-label="Wednesday 30"><span class="n">Wed</span><span class="d">30</span></button><button type="button" class="" data-day="thu" aria-pressed="false" aria-label="Thursday 1"><span class="n">Thu</span><span class="d">1</span></button><button type="button" class="" data-day="fri" aria-pressed="false" aria-label="Friday 2"><span class="n">Fri</span><span class="d">2</span></button></div><div class="cal" id="cal" data-t0="9" style="--n:8"><div class="hours" aria-hidden="true"><div class="hours__spacer"></div><div class="hours__body"><span style="top:calc(0 * var(--hr))">9am</span><span style="top:calc(1 * var(--hr))">10am</span><span style="top:calc(2 * var(--hr))">11am</span><span style="top:calc(3 * var(--hr))">12pm</span><span style="top:calc(4 * var(--hr))">1pm</span><span style="top:calc(5 * var(--hr))">2pm</span><span style="top:calc(6 * var(--hr))">3pm</span><span style="top:calc(7 * var(--hr))">4pm</span><span class="last" style="top:calc(8 * var(--hr))">5pm</span></div></div><section class="day" data-day="mon" aria-labelledby="h-mon"><div class="day__head"><h2 class="day__h" id="h-mon"><span class="day__name">Mon</span><span class="day__date">28</span></h2></div><div class="day__body"><ol class="day__list" data-list="mon"><li class="block hue-comp3900" style="--s:4;--d:2;--l:0;--w:1;--i:0"><span class="sr">Monday 1 to 3pm.</span><p class="code">COMP3900</p><p class="type">Lecture</p><p class="time">1–3pm</p><p class="room">Lowitja Cinema 1.02</p></li></ol></div></section><section class="day is-today is-active" data-day="tue" aria-labelledby="h-tue"><div class="day__head"><h2 class="day__h" id="h-tue"><span class="day__name">Tue</span><span class="day__date">29</span><span class=day__today>Today</span></h2></div><div class="day__body"><ol class="day__list" data-list="tue"><li class="block hue-finm1001 is-clash" style="--s:3;--d:2;--l:0;--w:0.48;--i:1"><span class="sr">Tuesday 12 to 2pm.</span><p class="code">FINM1001</p><p class="type">Lecture</p><p class="time">12–2pm</p><p class="tag"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-alert"/></svg><span class="tag__t">Clash</span></p></li><li class="block hue-comp4650 is-clash" style="--s:4;--d:2.5;--l:0.52;--w:0.48;--i:2"><span class="sr">Tuesday 1 to 3:30pm.</span><p class="code">COMP4650</p><p class="type">Lecture</p><p class="time">1–3:30pm</p><p class="tag"><svg class="i" aria-hidden="true" focusable="false"><use href="#i-alert"/></svg><span class="tag__t">Clash</span></p></li><li class="block hue-finm1001 short" style="--s:7;--d:1;--l:0;--w:1;--i:3"><span class="sr">Tuesday 4 to 5pm.</span><p class="code">FINM1001</p><p class="type">Workshop</p><p class="time">4–5pm</p></li></ol><div class="overlap" aria-hidden="true" style="--s:4;--d:1"></div><div class="nowline" style="--now:2.667" aria-hidden="true"></div></div></section><section class="day" data-day="wed" aria-labelledby="h-wed"><div class="day__head"><h2 class="day__h" id="h-wed"><span class="day__name">Wed</span><span class="day__date">30</span></h2></div><div class="day__body"><ol class="day__list" data-list="wed"><li class="block hue-comp4020" style="--s:1.5;--d:1.5;--l:0;--w:1;--i:4"><span class="sr">Wednesday 10:30am to 12pm.</span><p class="code">COMP4020</p><p class="type">Tutorial</p><p class="time">10:30am–12pm</p><p class="room">Marie Reay 4.03</p></li><li id="held" class="block hue-comp3900" style="--s:5;--d:1.5;--l:0;--w:0.48;--i:5"><span class="sr">Wednesday 2 to 3:30pm.</span><p class="code">COMP3900</p><p class="type">Tutorial</p><p class="time">2–3:30pm</p></li><li id="held-tail" class="block hue-comp3900 is-tail" style="--s:6.5;--d:0.5;--l:0;--w:0.48;--i:6"><span class="sr">Optional drop-in, Wednesday 3:30 to 4pm.</span><p class="type">Optional drop-in, 3:30–4pm</p></li><li class="block hue-comp4650 is-dropin" style="--s:6;--d:2;--l:0.52;--w:0.48;--i:7"><span class="sr">Wednesday 3 to 5pm.</span><p class="code">COMP4650</p><p class="type">Optional drop-in</p><p class="time">3–5pm</p></li></ol></div></section><section class="day" data-day="thu" aria-labelledby="h-thu"><div class="day__head"><h2 class="day__h" id="h-thu"><span class="day__name">Thu</span><span class="day__date">1</span></h2></div><div class="day__body"><ol class="day__list" data-list="thu"><li class="block hue-finm1001 short" style="--s:0;--d:1;--l:0;--w:1;--i:8"><span class="sr">Thursday 9 to 10am.</span><p class="code">FINM1001</p><p class="type">Tutorial</p><p class="time">9–10am</p></li><li class="block hue-comp4020" style="--s:2;--d:2;--l:0;--w:1;--i:9"><span class="sr">Thursday 11am to 1pm.</span><p class="code">COMP4020</p><p class="type">Lecture</p><p class="time">11am–1pm</p><p class="room">Fulton Muir 2.02</p></li><li class="block hue-comp4650" style="--s:5;--d:1.5;--l:0;--w:1;--i:10"><span class="sr">Thursday 2 to 3:30pm.</span><p class="code">COMP4650</p><p class="type">Computer lab</p><p class="time">2–3:30pm</p><p class="room">Darius N111</p></li><li class="block hue-comp4650 is-tail" style="--s:6.5;--d:0.5;--l:0;--w:1;--i:11"><span class="sr">Optional drop-in, Thursday 3:30 to 4pm.</span><p class="type">Optional drop-in, 3:30–4pm</p></li></ol></div></section><section class="day" data-day="fri" aria-labelledby="h-fri"><div class="day__head"><h2 class="day__h" id="h-fri"><span class="day__name">Fri</span><span class="day__date">2</span></h2></div><div class="day__body"><ol class="day__list" data-list="fri"></ol><p class="day__empty">Nothing on</p></div></section></div></div>
+
+</main>
+<script src="app.js"></script>
+</body>
+</html>

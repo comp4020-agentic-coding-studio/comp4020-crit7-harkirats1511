@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Night Shift: Change a class</title>
+<meta name="color-scheme" content="dark light">
+<link rel="stylesheet" href="tokens.css">
+<link rel="stylesheet" href="app.css">
+<script src="app.js"></script>
+</head>
+<body data-page="resolve">
+<a class="skip" href="#board">Skip to the week</a>
+<a class="skip skip-2" href="#drawer">Skip to details</a>
+<div class="app" id="app">
+  <header class="topbar" id="topbar"><a class="brand" href="index.html">Night Shift</a></header>
+  <div class="stage" id="stage">
+    <main id="main">
+      <div class="strip" id="strip"><h1>Change a class</h1></div>
+      <section id="nojs" aria-label="Week 8 classes"><h2>Week 8 classes</h2><p>The two Tuesday lectures (FINM1001 12-2pm and COMP4650 1-3:30pm) overlap for an hour and cannot be fixed, because each runs at one time only.</p><h3>Monday 28 Sep</h3><ul><li>1-3pm: COMP3900 Lecture, Lowitja Cinema 1.02</li></ul><h3>Tuesday 29 Sep (today)</h3><ul><li>12-2pm: FINM1001 Lecture, Copland Lecture Theatre</li><li>1-3:30pm: COMP4650 Lecture, Robertson Theatre 1.28A</li><li>4-5pm: FINM1001 Workshop, Copland Lecture Theatre</li></ul><h3>Wednesday 30 Sep</h3><ul><li>10:30am-12pm: COMP4020 Tutorial, Marie Reay 4.03</li><li>2-3:30pm: COMP3900 Tutorial (optional drop-in 3:30-4pm), Fulton Muir 2.03</li><li>3-5pm: COMP4650 Drop-in (optional), Fulton Muir 2.04</li></ul><h3>Thursday 1 Oct</h3><ul><li>9-10am: FINM1001 Tutorial, Marie Reay 3.02</li><li>11am-1pm: COMP4020 Lecture, Fulton Muir 2.02</li><li>2-3:30pm: COMP4650 Computer lab (optional drop-in 3:30-4pm), Darius N111</li></ul><h3>Friday 2 Oct</h3><p>Nothing on.</p></section>
+      <div class="board" id="board" tabindex="-1"></div>
+    </main>
+  </div>
+  <div class="drawer" id="drawer" role="dialog" aria-modal="false" aria-labelledby="dr-title" tabindex="-1" inert></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+</body>
+</html>
