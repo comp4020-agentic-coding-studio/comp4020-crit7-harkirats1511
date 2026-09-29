@@ -22,6 +22,8 @@ export interface Session {
   weeks: WeekMask;
   /** Building/room text, null when not published. */
   location: string | null;
+  /** Clash-exempt (e.g. a drop-in bundled inside an option). A session is exempt when session.exempt OR its group.exemptFromClash. */
+  exempt: boolean;
 }
 
 /** The unit a student selects (e.g. "TutA 01"). Seats are per option, never per part. */
@@ -34,6 +36,8 @@ export interface Option {
   capacity: number | null;
   campus: string | null;
   staff: string | null;
+  /** Overflow/virtual clone (e.g. "01_Clone": same slot, huge capacity, location NA). UI shows "overflow / virtual". */
+  overflow: boolean;
   /** Ordered by part. Always at least one. */
   sessions: Session[];
 }
@@ -45,7 +49,7 @@ export interface Group {
   kind: GroupKind;
   /** e.g. "Tut A". */
   name: string;
-  /** Drop-ins never clash, in either direction. */
+  /** Every session in this group is exempt from clashes, in either direction. A session is exempt when session.exempt OR its group.exemptFromClash. */
   exemptFromClash: boolean;
   /** Ordered by option code. */
   options: Option[];
@@ -67,7 +71,7 @@ export interface Term {
   name: string;
   /** ISO date (YYYY-MM-DD) of the Monday of teaching week 1. */
   startDate: string;
-  /** Number of teaching weeks (13). */
+  /** Number of teaching weeks (real term: 12, mid-sem break after week 6; WeekMask stays a 1..13 bitmask). */
   teachingWeeks: number;
   /** The break sits after this teaching week (null = no break). Calendar week = teaching week + 1 after it. */
   breakAfterWeek: number | null;

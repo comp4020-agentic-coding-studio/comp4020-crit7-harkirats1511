@@ -15,6 +15,13 @@
       "when": 1790683303608,
       "tag": "0001_normal_dakota_north",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1790683492420,
+      "tag": "0002_workable_fenris",
+      "breakpoints": true
     }
   ]
 }

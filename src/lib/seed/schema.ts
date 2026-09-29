@@ -16,6 +16,8 @@ export const seedSession = z.object({
   end: timeText,
   weeks: weeksText.or(todo),
   location: z.string().nullable().optional(),
+  /** Drop-in session: clash-exempt (maps to sessions.exempt). */
+  dropIn: z.boolean().default(false),
 });
 
 export const seedOption = z.object({
@@ -28,6 +30,8 @@ export const seedOption = z.object({
   enrolled: z.number().int().nonnegative().default(0),
   campus: z.string().nullable().optional(),
   staff: z.string().nullable().optional(),
+  /** Overflow/virtual clone option (e.g. "01_Clone"). */
+  overflow: z.boolean().default(false),
   sessions: z.array(seedSession).min(1),
 });
 
@@ -52,7 +56,8 @@ export const seedTerm = z.object({
   name: z.string(),
   /** ISO Monday of teaching week 1. */
   startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  teachingWeeks: z.number().int().default(13),
+  /** Real term: startDate 2026-07-27, teachingWeeks 12, breakAfterWeek 6. */
+  teachingWeeks: z.number().int().min(1).max(13).default(13),
   breakAfterWeek: z.number().int().nullable().default(null),
 });
 

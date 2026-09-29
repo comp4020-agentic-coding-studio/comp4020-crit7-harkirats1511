@@ -9,13 +9,16 @@ Engine files are pure TS: no DB or Astro imports. Do not `git commit`.
 Shared vocabulary (`src/lib/engine/types.ts`): `WeekMask` = bitmask over teaching weeks 1..13, bit (i-1) = week i.
 Days 0 = Monday. Times are minutes since midnight. `Allocation` = Map groupId -> optionId. Seats used =
 COUNT(allocations), never stored. `capacity: null` = "Not published", never zero or full. Multi-part options
-are atomic; drop-ins (`exemptFromClash`) never clash either way.
+are atomic; exempt sessions never clash either way (session exempt = `session.exempt || group.exemptFromClash`).
+The real term has 12 teaching weeks, break after week 6, week 1 Monday = 2026-07-27 (masks stay 1..13 bits).
 
 ## A. Engine core
 Owns: `src/lib/engine/{weeks,clash,resolve,draft}.ts` and `src/lib/engine/{weeks,clash,resolve,draft}.test.ts`.
 Implements: `parseWeeks, formatWeeks, weekList, weeksOverlap, weekBit, weekToDate`; `sessionOverlap, optionClash,
 clashesFor, allClashes, optionStates`; `resolveClash`; `effectiveAlloc, diffAlloc`. Signatures are in those files.
-Rules: same slot on disjoint weeks does not clash; adjacent (end == start) does not clash; cascade-safe candidates.
+Rules: a session pair is skipped when EITHER session is exempt (`session.exempt || group.exemptFromClash`); drop-ins are bundled
+inside options (COMP3900 TutA, COMP4650 ComA), so the option's other session still clashes. Tests must explain this.
+Same slot on disjoint weeks does not clash; adjacent (end == start) does not clash; cascade-safe candidates.
 
 ## B. Solver + prefs
 Owns: `src/lib/engine/{solve,prefs}.ts` + tests. Implements `autofix`, `defaultPrefs, parsePrefs, scorePrefs`.
@@ -36,6 +39,12 @@ Implements `validateSeed` (`path: message` errors, TODO allowed unless strict), 
   Per the MyTT screenshot, option 03 is Wed 09:00 and option 04 is Wed 10:30 (04 is NOT Wed 09:00). The student's
   allocated option in the seed is decided from the screenshot, not assumed. Course routes use the code, so
   `/course/COMP4020/` must resolve (match by code case-insensitively, or id `comp4020`).
+- Weeks input: accept teaching-week strings ("1-8,10-12") AND MyTT raw date-range strings ("27/7-31/8, 21/9-28/9,
+  12/10-26/10") via a tested converter to teaching-week masks (term startDate/break). Seed sessions use `dropIn`, options `overflow`.
+- Capacity = MyTT Free (+1 for the option the student is allocated to, since Free excludes their own seat); see
+  /home/harki/.claude/jobs/26fc8fcc/tmp/mytt-data.md.
+- Student row: display name only (no u-number, no email). Raw staff IDs like u8204149 are stored as unknown (null).
+- Real term: startDate 2026-07-27, teachingWeeks 12, breakAfterWeek 6.
 - Real activity lists for COMP3900, COMP4650, FINM1001 come from the student; use `TODO` markers meanwhile.
 
 ## E. Services + API
@@ -58,6 +67,8 @@ handler that 303s), `src/pages/timetable/index.astro`, `src/pages/course/[id].as
 Shell must keep: `lang="en-AU"`, `title` prop, viewport meta, `<nav aria-label="site">`, `<main>` around the slot,
 and it imports `shell.css` and `grid.css`. Each page supplies its single `<h1>`. Every page in `spec/routes.ts` must stay
 green in the invariants (F also owns `spec/routes.ts`; other workstreams ask F or the orchestrator to add a route).
+
+F also shows `option.overflow` options (e.g. "01_Clone") as "overflow / virtual".
 
 ## G. Grid
 Owns: `src/pages/grid/index.astro`, `src/styles/grid.css`, components `src/components/{GridDay,WeekScrubber}.astro`.

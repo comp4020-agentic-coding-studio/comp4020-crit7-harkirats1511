@@ -61,6 +61,8 @@ export const options = sqliteTable("options", {
   capacity: int(),
   campus: text(),
   staff: text(),
+  /** Overflow/virtual clone option. */
+  overflow: int({ mode: "boolean" }).notNull().default(false),
   sortOrder: int("sort_order").notNull().default(0),
 });
 
@@ -75,6 +77,8 @@ export const sessions = sqliteTable("sessions", {
   /** WeekMask: bit (i-1) = teaching week i. */
   weeks: int().notNull(),
   location: text(),
+  /** Clash-exempt session (drop-in). Also exempt when its group has exempt_from_clash. */
+  exempt: int({ mode: "boolean" }).notNull().default(false),
 });
 
 export const students = sqliteTable("students", {
