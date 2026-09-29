@@ -1,5 +1,6 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { client } from "../db.ts";
 import { DAY_NAMES, myttWeeksToMask, type WeekTerm } from "./mytt-weeks.ts";
 import type { SeedFile } from "./schema.ts";
@@ -28,9 +29,29 @@ export interface SeedStats {
 
 export type LoadOptions = ValidateOptions & { path?: string; log?: (msg: string) => void };
 
+/**
+ * Resolve the seed file: an explicit path or the cwd-relative default first; otherwise walk up from this module
+ * (works from src/lib/seed and from the bundled dist/server chunks) looking for SEED_PATH.
+ */
+function resolveSeedPath(explicit?: string): string {
+  const primary = resolve(explicit ?? SEED_PATH);
+  if (explicit || existsSync(primary)) return primary;
+  try {
+    let dir = dirname(fileURLToPath(import.meta.url));
+    for (let i = 0; i < 6; i++) {
+      const candidate = join(dir, SEED_PATH);
+      if (existsSync(candidate)) return candidate;
+      dir = dirname(dir);
+    }
+  } catch {
+    // import.meta.url unavailable: fall through to the cwd path (readSeed reports it)
+  }
+  return primary;
+}
+
 /** Read and validate a seed file. Throws with all "path: message" errors if invalid. */
 export function readSeed(opts?: LoadOptions): { seed: SeedFile; warnings: string[] } {
-  const file = resolve(opts?.path ?? SEED_PATH);
+  const file = resolveSeedPath(opts?.path);
   let json: unknown;
   try {
     json = JSON.parse(readFileSync(file, "utf8"));

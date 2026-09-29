@@ -31,9 +31,9 @@ Owns: `src/lib/engine/ical.ts` + `ical.test.ts`, and `spec/ics.test.ts`. Impleme
 Owns: `src/lib/seed/{schema,validate,load}.ts`, `scripts/seed.ts`, `seed/*.json`, the seed hand-fill guide.
 Implements `validateSeed` (`path: message` errors, TODO allowed unless strict), `seedIfEmpty(opts?)`, and the
 `db:seed` script (`--strict`). Zod types in `seed/schema.ts` are the contract; extend only additively.
-- `seedIfEmpty()` is IDEMPOTENT (no-op when `terms` is non-empty) and safe on every boot. `spec/global-setup.ts`
-  (owned by E, see below) will call it, after setting `process.env.DATABASE_PATH` to the temp DB and before
-  spawning the app, so it must not depend on Astro and must use `src/lib/db.ts` (migrate-on-import).
+- `seedIfEmpty()` is IDEMPOTENT (no-op when `terms` is non-empty) and safe on every boot. The app calls it
+  itself on the first non-prerendered request (`src/middleware.ts`); `spec/global-setup.ts` does NOT seed, so the
+  spec exercises real boot seeding. It must not depend on Astro and must use `src/lib/db.ts` (migrate-on-import).
 - Seed student id is `"me"` (`DEFAULT_STUDENT_ID`); `enrolled` inserts placeholder students so seats match MyTT.
 - COMP4020 TutA (`comp4020-tuta`) has options `01`..`06`. Options 01 and 02 are multi-part (P1 and P2 sessions).
   Per the MyTT screenshot, option 03 is Wed 09:00 and option 04 is Wed 10:30 (04 is NOT Wed 09:00). The student's
@@ -49,7 +49,7 @@ Implements `validateSeed` (`path: message` errors, TODO allowed unless strict), 
 
 ## E. Services + API
 Owns: `src/lib/services/*`, `src/pages/api/**` (including `api/events.ts`, which must keep streaming bytes and
-emit `alloc-changed` via `src/lib/events.ts`), and `spec/global-setup.ts` (add the `seedIfEmpty()` call).
+emit `alloc-changed` via `src/lib/events.ts`), and `spec/global-setup.ts`.
 Implements every function in `src/lib/services/alloc.ts`: `loadCatalog, loadAllocation, seatsUsed, loadHistory,
 getOpenDraft, loadDraftOverlay, loadPrefs, loadWaitlist, loadSwapRequests, selectOption, dropGroup, moveBatch,
 joinWaitlist, requestSwap, newDraft, applyDraft, discardDraft, undoLatest, autofixPreview, autofixConfirm,

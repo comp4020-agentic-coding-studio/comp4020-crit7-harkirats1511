@@ -28,11 +28,9 @@ export default async function setup(project: TestProject): Promise<() => void> {
     });
   });
 
-  // Seed the throwaway DB before the app boots (seedIfEmpty uses src/lib/db.ts, which reads DATABASE_PATH on import).
+  // Throwaway DB: the app seeds itself on first request (src/middleware.ts), so the spec exercises real boot seeding.
   const databasePath = join(mkdtempSync(join(tmpdir(), "spec-db-")), "test.db");
   process.env.DATABASE_PATH = databasePath;
-  const { seedIfEmpty } = await import("../src/lib/seed/load");
-  seedIfEmpty();
 
   const server = spawn("node", [entry], {
     env: {
