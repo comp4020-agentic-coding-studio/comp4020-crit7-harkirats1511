@@ -200,17 +200,23 @@ const glance = days.map((d) => {
                     </details>
                   </li>
                   <li>
-                    <button type="button" class="opt off" disabled>
+                    <a class="opt" href="https://echo360.net.au" target="_blank" rel="noopener noreferrer">
                       <Icon name="play" />
-                      <span>Watch the recording<span class="sub">Not linked here yet</span></span>
-                    </button>
+                      <span>Watch the recording<span class="sub">Opens Echo360 in a new tab</span></span>
+                    </a>
+                  </li>
+                  <li>
+                    <details class="optx">
+                      <summary class="opt"><Icon name="mail" />Email the convenor</summary>
+                      <div class="optx-body">
+                        <div class="emailbox">
+                          <p class="txt" id="email-text">{email}</p>
+                          <button type="button" class="btn" data-copy="email-text" hidden><Icon name="copy" />Copy email</button>
+                        </div>
+                      </div>
+                    </details>
                   </li>
                 </ul>
-                <div class="emailbox">
-                  <p class="eyebrow">Email the convenor</p>
-                  <p class="txt" id="email-text">{email}</p>
-                  <button type="button" class="btn" data-copy="email-text" hidden><Icon name="copy" />Copy email</button>
-                </div>
               </>
             )}
             {problem!.count > 1 && (
