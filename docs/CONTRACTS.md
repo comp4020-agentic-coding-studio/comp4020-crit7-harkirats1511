@@ -43,7 +43,7 @@ Implements `validateSeed` (`path: message` errors, TODO allowed unless strict), 
   12/10-26/10") via a tested converter to teaching-week masks (term startDate/break). Seed sessions use `dropIn`, options `overflow`.
 - Capacity = MyTT Free (+1 for the option the student is allocated to, since Free excludes their own seat); see
   /home/harki/.claude/jobs/26fc8fcc/tmp/mytt-data.md.
-- Student row: display name only (no u-number, no email). Raw staff IDs like u8204149 are stored as unknown (null).
+- Student row: display name only (no u-number, no email). Raw staff IDs like uXXXXXXX are stored as unknown (null).
 - Real term: startDate 2026-07-27, teachingWeeks 12, breakAfterWeek 6.
 - Real activity lists for COMP3900, COMP4650, FINM1001 come from the student; use `TODO` markers meanwhile.
 
