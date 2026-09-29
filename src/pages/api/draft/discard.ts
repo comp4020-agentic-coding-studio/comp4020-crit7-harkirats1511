@@ -1,8 +1,11 @@
 import type { APIRoute } from "astro";
+import { DEFAULT_STUDENT_ID, discardDraft } from "../../../lib/services/alloc";
+import { field, readForm, redirectTo, respond } from "../../../lib/services/http";
 
-// Stub: workstream E implements POST. Contract: form POST {draftId}; 303
-export const POST: APIRoute = () =>
-  new Response(JSON.stringify({ error: "not implemented" }), {
-    status: 501,
-    headers: { "content-type": "application/json" },
-  });
+// POST {draftId}. 303 to /draft/ (or `next`) with ?msg=draft-discarded or ?error=<no_draft|invalid>&detail=.
+export const POST: APIRoute = async ({ request }) => {
+  const form = await readForm(request);
+  const draftId = field(form, "draftId");
+  if (!draftId) return redirectTo(request, form, { fallback: "/draft/", fixed: true, error: "invalid", detail: "draftId is required." });
+  return respond(request, form, discardDraft(DEFAULT_STUDENT_ID, draftId), "draft-discarded", { fallback: "/draft/", fixed: true });
+};

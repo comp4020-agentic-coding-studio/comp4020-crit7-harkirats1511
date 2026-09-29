@@ -1,8 +1,13 @@
 import type { APIRoute } from "astro";
+import { DEFAULT_STUDENT_ID, requestSwap } from "../../lib/services/alloc";
+import { field, readForm, redirectTo, respond } from "../../lib/services/http";
 
-// Stub: workstream E implements POST. Contract: form POST {groupId, wantOptionId}; 303
-export const POST: APIRoute = () =>
-  new Response(JSON.stringify({ error: "not implemented" }), {
-    status: 501,
-    headers: { "content-type": "application/json" },
-  });
+// POST {groupId, wantOptionId}. 303 back with ?msg=swap-requested or ?error=<code>&detail=.
+export const POST: APIRoute = async ({ request }) => {
+  const form = await readForm(request);
+  const groupId = field(form, "groupId");
+  const wantOptionId = field(form, "wantOptionId");
+  if (!groupId || !wantOptionId)
+    return redirectTo(request, form, { fallback: "/timetable/", error: "invalid", detail: "groupId and wantOptionId are required." });
+  return respond(request, form, requestSwap(DEFAULT_STUDENT_ID, groupId, wantOptionId), "swap-requested", { fallback: "/timetable/" });
+};

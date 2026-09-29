@@ -28,12 +28,18 @@ export default async function setup(project: TestProject): Promise<() => void> {
     });
   });
 
+  // Seed the throwaway DB before the app boots (seedIfEmpty uses src/lib/db.ts, which reads DATABASE_PATH on import).
+  const databasePath = join(mkdtempSync(join(tmpdir(), "spec-db-")), "test.db");
+  process.env.DATABASE_PATH = databasePath;
+  const { seedIfEmpty } = await import("../src/lib/seed/load");
+  seedIfEmpty();
+
   const server = spawn("node", [entry], {
     env: {
       ...process.env,
       HOST: "127.0.0.1",
       PORT: String(port),
-      DATABASE_PATH: join(mkdtempSync(join(tmpdir(), "spec-db-")), "test.db"),
+      DATABASE_PATH: databasePath,
     },
     stdio: "ignore",
   });
