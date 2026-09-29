@@ -1,0 +1,60 @@
+---
+import { weekToDate } from "../lib/engine/weeks";
+import type { Term } from "../lib/engine/types";
+
+interface Props {
+  term: Term;
+  week: number;
+  /** Other query params to preserve (focus, pick, all). */
+  params: Record<string, string>;
+  /** Weeks (bitmask) in which the focused sessions run; marks those week links in text. */
+  activeMask?: number;
+}
+const { term, week, params, activeMask } = Astro.props;
+
+function href(w: number): string {
+  const q = new URLSearchParams(params);
+  q.set("week", String(w));
+  return `/grid/?${q.toString()}`;
+}
+const fmt = (d: Date) =>
+  d.toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+const start = weekToDate(term.startDate, term.breakAfterWeek, week, 0);
+const end = weekToDate(term.startDate, term.breakAfterWeek, week, 6);
+const range = `${fmt(start)} to ${fmt(end)} ${end.getUTCFullYear()}`;
+const weeks = Array.from({ length: term.teachingWeeks }, (_, i) => i + 1);
+---
+
+<nav class="week-scrubber" aria-label="Teaching week">
+  <div class="ws-top">
+    {week > 1 ? <a class="ws-step" href={href(week - 1)} rel="prev">&larr; Previous week</a> : <span class="ws-step ws-off">&larr; Previous week</span>}
+    <p class="ws-now">
+      <strong>Week {week}</strong> of {term.teachingWeeks}<span class="ws-dates">, {range}</span>
+    </p>
+    {week < term.teachingWeeks ? <a class="ws-step" href={href(week + 1)} rel="next">Next week &rarr;</a> : <span class="ws-step ws-off">Next week &rarr;</span>}
+  </div>
+  <ol class="ws-strip">
+    {
+      weeks.map((w) => (
+        <>
+          <li>
+            <a
+              href={href(w)}
+              class:list={["ws-w", { "ws-cur": w === week, "ws-act": activeMask !== undefined && (activeMask & (1 << (w - 1))) !== 0 }]}
+              aria-current={w === week ? "page" : undefined}
+              aria-label={`Week ${w}${activeMask !== undefined ? ((activeMask & (1 << (w - 1))) !== 0 ? ", has sessions" : ", no sessions for this focus") : ""}`}
+            >
+              {w}
+            </a>
+          </li>
+          {term.breakAfterWeek === w && w < term.teachingWeeks && (
+            <li class="ws-break" aria-label="Mid-semester break, no classes">
+              <span>Mid-sem break</span>
+            </li>
+          )}
+        </>
+      ))
+    }
+  </ol>
+  {activeMask !== undefined && <p class="grid-note">Underlined weeks have sessions for the focused class.</p>}
+</nav>

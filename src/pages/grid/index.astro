@@ -1,7 +1,325 @@
 ---
 import Shell from "../../layouts/Shell.astro";
+import GridDay from "../../components/GridDay.astro";
+import GridLegend from "../../components/GridLegend.astro";
+import GridIcon from "../../components/GridIcon.astro";
+import WeekScrubber from "../../components/WeekScrubber.astro";
+import { getViewState, DAY_NAMES, fmtRange } from "../../lib/view";
+import { sessionOverlap } from "../../lib/engine/clash";
+import { formatWeeks, weekToDate, weekBit } from "../../lib/engine/weeks";
+import { assignLanes, daysBeyond, freeLaneRun, dayTabs, fitAxis, maxLanes, minBoardPx, pickDefaultDay, type GridBlock } from "../../lib/grid-layout";
+import type { Group, Option, Session } from "../../lib/engine/types";
+
+const v = getViewState(Astro.url);
+const { catalog, term, alloc, seats } = v;
+const q = Astro.url.searchParams;
+const focusId = q.get("focus")?.trim() || null;
+const pick = q.get("pick");
+const showAll = q.get("all") === "1";
+const dayRaw = q.get("day");
+const reqDay = dayRaw !== null && /^[0-6]$/.test(dayRaw) ? Number(dayRaw) : null;
+const focusGroup: Group | null = focusId ? (catalog.groups.get(focusId) ?? null) : null;
+const unknownFocus = focusId !== null && focusGroup === null;
+
+interface Item {
+  option: Option;
+  group: Group;
+  session: Session;
+  courseCode: string;
+  held: boolean;
+  candidate: boolean;
+}
+
+const exempt = (i: Item) => i.session.exempt || i.group.exemptFromClash;
+const codeOf = (g: Group) => catalog.courses.get(g.courseId)?.code ?? g.courseId;
+
+// Held options (effective allocation).
+const heldOpts: { option: Option; group: Group }[] = [];
+for (const [gid, oid] of alloc) {
+  const option = catalog.options.get(oid);
+  const group = catalog.groups.get(gid);
+  if (option && group) heldOpts.push({ option, group });
+}
+
+let week = 1;
+let notRunning: { text: string }[] = [];
+let blocks: GridBlock[] = [];
+let activeMask: number | undefined;
+let days: number[] = [];
+let axis = { startHour: 8, endHour: 18 };
+const PPM = 2.8;
+
+if (!unknownFocus) {
+  const focusOpts = focusGroup ? focusGroup.options : [];
+  const focusHeldId = focusGroup ? alloc.get(focusGroup.id) : undefined;
+
+  // Choose the week.
+  const relevantSessions: Session[] = focusGroup
+    ? focusOpts.flatMap((o) => o.sessions)
+    : heldOpts.flatMap((h) => h.option.sessions);
+  activeMask = relevantSessions.reduce((m, s) => m | s.weeks, 0);
+  const wantedRaw = Number(q.get("week"));
+  let firstWeek = 1;
+  for (let w = 1; w <= term.teachingWeeks; w++) if (activeMask & (1 << (w - 1))) { firstWeek = w; break; }
+  const wanted = Number.isInteger(wantedRaw) && wantedRaw !== 0 ? wantedRaw : firstWeek;
+  week = Math.min(Math.max(wanted, 1), term.teachingWeeks);
+  const bit = weekBit(week);
+  const runs = (s: Session) => (s.weeks & bit) !== 0;
+
+  const held: Item[] = heldOpts.flatMap(({ option, group }) =>
+    option.sessions.filter(runs).map((session) => ({
+      option, group, session, courseCode: codeOf(group), held: true, candidate: false,
+    })),
+  );
+  const cands: Item[] = focusGroup
+    ? focusOpts.flatMap((option) =>
+        option.sessions.filter(runs).map((session) => ({
+          option, group: focusGroup, session, courseCode: codeOf(focusGroup), held: option.id === focusHeldId, candidate: true,
+        })),
+      )
+    : [];
+
+  // Not running this week.
+  if (focusGroup) {
+    notRunning = focusOpts
+      .filter((o) => !o.sessions.some(runs))
+      .map((o) => ({
+        text: `${g2(focusGroup, o)} (${formatWeeks(o.sessions.reduce((m, s) => m | s.weeks, 0), term.breakAfterWeek) || "no teaching weeks"})`,
+      }));
+  }
+  function g2(g: Group, o: Option) {
+    return `${g.name} ${o.code}`;
+  }
+
+  const overlaps = (a: Item, b: Item) => !exempt(a) && !exempt(b) && sessionOverlap(a.session, b.session) !== null;
+
+  const seatsText = (o: Option, yours: boolean) => {
+    if (o.capacity === null) return "Seats not published";
+    const left = Math.max(0, o.capacity - (seats.get(o.id) ?? 0));
+    return yours ? `${left} seats left (you hold one)` : left === 0 ? "Full, 0 seats left" : `${left} seats left`;
+  };
+
+  const make = (it: Item, kind: GridBlock["kind"], notes: string[]): GridBlock => {
+    const s = it.session;
+    const yours = alloc.get(it.group.id) === it.option.id;
+    const dropIn = exempt(it);
+    const full = it.candidate && !yours && it.option.capacity !== null && (seats.get(it.option.id) ?? 0) >= it.option.capacity;
+    const extra: string[] = [];
+    if (full) extra.push("Full");
+    if (it.option.overflow) extra.push("Overflow");
+    if (dropIn) extra.push("Drop-in, never clashes");
+    return {
+      key: `${it.option.id}:${s.id}:${kind}`,
+      kind,
+      day: s.day,
+      startMin: s.startMin,
+      endMin: s.endMin,
+      tag: kind === "yours" ? "Yours" : kind === "option" ? "Option" : kind === "collides" ? "Collides" : "Ghost",
+      extraTags: extra,
+      dropIn,
+      courseCode: it.courseCode,
+      className: `${it.group.name} ${it.option.code}${it.option.sessions.length > 1 ? ` ${s.part}` : ""}`,
+      when: `${DAY_NAMES[s.day]} ${fmtRange(s)}`,
+      room: s.location ?? "Room not published",
+      seats: seatsText(it.option, yours),
+      weeks: formatWeeks(s.weeks, term.breakAfterWeek),
+      notes,
+      href: kind === "ghost" ? null : `/course/${encodeURIComponent(it.courseCode)}/?pick=${encodeURIComponent(it.option.id)}`,
+    };
+  };
+
+  const all: GridBlock[] = [];
+  if (focusGroup) {
+    const heldOthers = held.filter((h) => h.group.id !== focusGroup.id);
+    for (const c of cands) {
+      const hits = heldOthers.filter((h) => overlaps(c, h));
+      const notes = hits.length
+        ? [`Clashes with ${[...new Set(hits.map((h) => `${h.courseCode} ${h.group.name} ${h.option.code}`))].join(", ")}`]
+        : [];
+      const kind = c.held ? "yours" : "option";
+      all.push(make(c, kind, notes));
+    }
+    for (const h of heldOthers) {
+      const hits = cands.filter((c) => overlaps(h, c));
+      if (hits.length) {
+        const names = [...new Set(hits.map((c) => `${g2(focusGroup, c.option)}`))];
+        all.push(make(h, "collides", [`Collides with ${codeOf(focusGroup)} ${names.join(", ")}`]));
+      } else {
+        all.push(make(h, showAll ? "yours" : "ghost", []));
+      }
+    }
+  } else {
+    for (const h of held) {
+      const hits = held.filter((o) => o !== h && o.option.id !== h.option.id && overlaps(h, o));
+      if (hits.length) {
+        const names = [...new Set(hits.map((o) => `${o.courseCode} ${o.group.name} ${o.option.code}`))];
+        all.push(make(h, "collides", [`Collides with ${names.join(", ")}`]));
+      } else all.push(make(h, "yours", []));
+    }
+  }
+  blocks = all;
+
+  // Axis and days from everything shown.
+  axis = fitAxis(blocks);
+  const daySet = new Set<number>([0, 1, 2, 3, 4]);
+  for (const b of blocks) daySet.add(b.day);
+  days = [...daySet].sort((a, b) => a - b);
+}
+
+// Lanes per day: ghosts sit behind and take no lane.
+const perDay = days.map((d) => {
+  const dayBlocks = blocks.filter((b) => b.day === d).sort((a, b) => a.startMin - b.startMin || a.endMin - b.endMin);
+  const laned = dayBlocks.filter((b) => b.kind !== "ghost");
+  const info = assignLanes(laned);
+  const laneByKey = new Map(laned.map((b, i) => [b, info[i].lane]));
+  const count = maxLanes(info);
+  const lanes = dayBlocks.map((b) => laneByKey.get(b) ?? 0);
+  const lanedLanes = laned.map((b) => laneByKey.get(b) ?? 0);
+  const ghostRuns = dayBlocks.map((b) => (b.kind === "ghost" ? freeLaneRun(b, laned, lanedLanes, count) : null));
+  return { d, blocks: dayBlocks, lanes, count, ghostRuns };
+});
+
+const baseParams: Record<string, string> = {};
+if (focusId) baseParams.focus = focusId;
+if (pick) baseParams.pick = pick;
+if (showAll) baseParams.all = "1";
+if (reqDay !== null) baseParams.day = String(reqDay);
+const toggleParams: Record<string, string> = { ...baseParams, week: String(week) };
+if (showAll) delete toggleParams.all;
+else toggleParams.all = "1";
+const toggleHref = `/grid/?${new URLSearchParams(toggleParams).toString()}`;
+
+const laneCounts = perDay.map((p) => p.count);
+const selDay = pickDefaultDay(blocks, days, reqDay);
+const tabs = dayTabs(blocks, days);
+const beyond = daysBeyond(laneCounts, 1150).map((i) => DAY_NAMES[days[i]]);
+const boardMin = minBoardPx(laneCounts);
+const selLanes = perDay.find((p) => p.d === selDay)?.count ?? 1;
+const dayHref = (d: number) => {
+  const p = new URLSearchParams({ ...baseParams, week: String(week), day: String(d) });
+  return `/grid/?${p.toString()}`;
+};
+const focusCourse = focusGroup ? catalog.courses.get(focusGroup.courseId) : null;
+const shownTable = blocks
+  .slice()
+  .sort((a, b) => a.day - b.day || a.startMin - b.startMin);
+const dayDate = (d: number) =>
+  weekToDate(term.startDate, term.breakAfterWeek, week, d as 0).toLocaleDateString("en-AU", {
+    day: "numeric", month: "short", timeZone: "UTC",
+  });
 ---
 
-<Shell title="Grid">
-  <h1>Grid</h1>
+<Shell sidebar={false} title={focusGroup ? `Grid: ${focusCourse?.code} ${focusGroup.name}` : "Grid"}>
+  <h1>Grid{focusGroup ? `: ${focusCourse?.code} ${focusGroup.name}` : ""}</h1>
+
+  {
+    unknownFocus ? (
+      <section class="grid-panel grid-error" role="alert">
+        <h2>Class not found</h2>
+        <p>
+          There is no class group called <code>{focusId}</code>. Group ids look like <code>comp3900-tuta</code>.
+        </p>
+        <p>
+          <a href="/grid/">Show my whole timetable</a> or <a href="/timetable/">open the timetable</a> to pick a class.
+        </p>
+      </section>
+    ) : (
+      <>
+        <p class="grid-lede">
+          {focusGroup
+            ? `Every option of ${focusCourse?.code} ${focusGroup.name}, the class you hold, and only the classes that collide with them.`
+            : "Your whole timetable for the week, clashes emphasised."}
+          {" "}<a href={toggleHref}>{showAll ? "Show only relevant" : "Show everything"}</a>
+          {focusGroup && <> · <a href={`/course/${encodeURIComponent(focusCourse?.code ?? "")}/`}>Back to course</a></>}
+          {!focusGroup && <> · Add <code>?focus=group-id</code> to focus one class</>}
+        </p>
+
+        <WeekScrubber term={term} week={week} params={baseParams} activeMask={focusGroup ? activeMask : undefined} />
+
+        {
+          blocks.length === 0 ? (
+            <p class="grid-panel">Nothing is scheduled in week {week}.</p>
+          ) : (
+            <>
+            <nav class="day-tabs" aria-label="Day of week">
+              <ul>
+                {tabs.map((t) => (
+                  <li>
+                    <a href={dayHref(t.day)} aria-current={t.day === selDay ? "page" : undefined} class:list={["day-tab", { "day-tab--sel": t.day === selDay }]}>
+                      <strong>{DAY_NAMES[t.day]}</strong> <span>{t.count} {t.count === 1 ? "block" : "blocks"}</span>
+                      {t.collides && <span class="day-tab-clash"><GridIcon kind="collides" /> Collides</span>}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            {beyond.length > 0 && <p class="grid-note gnote-desk">Scroll sideways for {beyond.join(", ")}.</p>}
+            {selLanes >= 3 && <p class="grid-note gnote-phone">Several classes overlap on this day: scroll sideways to see them all.</p>}
+            <div class="grid-scroll">
+              <div class="grid-board" style={`min-width:${boardMin}px`}>
+                <div class="gaxis" aria-hidden="true">
+                  <div class="gday-head">&nbsp;</div>
+                  <div class="gaxis-body" style={`height:${(axis.endHour - axis.startHour) * 60 * PPM}px`}>
+                    {Array.from({ length: axis.endHour - axis.startHour + 1 }, (_, i) => axis.startHour + i).map((h) => (
+                      <span style={`top:${(h - axis.startHour) * 60 * PPM}px`}>{String(h).padStart(2, "0")}:00</span>
+                    ))}
+                  </div>
+                </div>
+                {perDay.map((pd) => (
+                  <GridDay
+                    id={`day-${pd.d}`}
+                    selected={pd.d === selDay}
+                    label={DAY_NAMES[pd.d]}
+                    date={dayDate(pd.d)}
+                    blocks={pd.blocks}
+                    lanes={pd.lanes}
+                    laneCount={pd.count}
+                    ghostRuns={pd.ghostRuns}
+                    startHour={axis.startHour}
+                    endHour={axis.endHour}
+                    ppm={PPM}
+                  />
+                ))}
+              </div>
+            </div>
+            </>
+          )
+        }
+
+        {
+          notRunning.length > 0 && (
+            <section class="grid-panel grid-notrunning" aria-labelledby="nr-h">
+              <h2 id="nr-h">Not running this week</h2>
+              <ul>{notRunning.map((n) => <li>{n.text}</li>)}</ul>
+            </section>
+          )
+        }
+
+        <GridLegend />
+
+        <details class="grid-list">
+          <summary>Show as list</summary>
+          <table>
+            <caption>Sessions shown for week {week}</caption>
+            <thead>
+              <tr><th scope="col">Tag</th><th scope="col">Class</th><th scope="col">When</th><th scope="col">Room</th><th scope="col">Seats</th><th scope="col">Weeks</th><th scope="col">Notes</th></tr>
+            </thead>
+            <tbody>
+              {shownTable.map((b) => (
+                <tr>
+                  <td>{[b.tag, ...b.extraTags].join(", ")}</td>
+                  <td>{b.href ? <a href={b.href}>{b.courseCode} {b.className}</a> : `${b.courseCode} ${b.className}`}</td>
+                  <td>{b.when}</td>
+                  <td>{b.room}</td>
+                  <td>{b.seats}</td>
+                  <td>{b.weeks}</td>
+                  <td>{b.notes.join("; ")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </details>
+      </>
+    )
+  }
 </Shell>

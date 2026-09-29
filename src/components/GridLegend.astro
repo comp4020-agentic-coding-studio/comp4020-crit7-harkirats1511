@@ -1,0 +1,27 @@
+---
+import GridIcon from "./GridIcon.astro";
+const items = [
+  { kind: "yours", tag: "Yours", text: "The option you hold for the group (solid black border)." },
+  { kind: "option", tag: "Option", text: "A candidate option of the focused group (double border)." },
+  { kind: "collides", tag: "Collides", text: "One of your other classes that overlaps a candidate this week (thick red-brown border)." },
+  { kind: "ghost", tag: "Ghost", text: "Your other classes, shown faintly for context only (thin dotted outline)." },
+  { kind: "dropin", tag: "Drop-in", text: "Drop-in session: dashed border, never clashes." },
+] as const;
+---
+
+<section class="grid-legend" aria-labelledby="legend-h">
+  <h2 id="legend-h">Legend</h2>
+  <ul>
+    {
+      items.map((i) => (
+        <li>
+          <span class={`lg-swatch gblk--${i.kind}`}>
+            <GridIcon kind={i.kind} /> {i.tag}
+          </span>
+          <span>{i.text}</span>
+        </li>
+      ))
+    }
+  </ul>
+  <p class="grid-note">Tags "Full" and "Overflow" are added in text when an option has no seats left or is a virtual overflow copy.</p>
+</section>

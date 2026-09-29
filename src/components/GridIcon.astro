@@ -1,0 +1,15 @@
+---
+// Small shape icon so block kind is never colour-only. Decorative (text tag sits beside it).
+interface Props {
+  kind: "yours" | "option" | "collides" | "ghost" | "dropin";
+}
+const { kind } = Astro.props;
+---
+
+<svg class="gicon" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" focusable="false">
+  {kind === "yours" && <rect x="1" y="1" width="10" height="10" fill="currentColor" />}
+  {kind === "option" && <circle cx="6" cy="6" r="4.5" fill="none" stroke="currentColor" stroke-width="2" />}
+  {kind === "collides" && <polygon points="6,1 11.5,11 0.5,11" fill="currentColor" />}
+  {kind === "ghost" && <rect x="1.5" y="1.5" width="9" height="9" fill="none" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2" />}
+  {kind === "dropin" && <path d="M1 6h10" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2" />}
+</svg>

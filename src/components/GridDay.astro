@@ -1,0 +1,76 @@
+---
+import { blockDetail, type GridBlock } from "../lib/grid-layout";
+import GridIcon from "./GridIcon.astro";
+
+interface Props {
+  id: string;
+  label: string;
+  date: string;
+  blocks: GridBlock[];
+  lanes: number[]; // lane per block (parallel to blocks)
+  laneCount: number;
+  ghostRuns: ({ from: number; count: number } | null)[];
+  startHour: number;
+  endHour: number;
+  ppm: number; // pixels per minute
+  /** The day shown on phones (other days are hidden by CSS at <= 640px). */
+  selected: boolean;
+}
+const { id, label, date, blocks, lanes, laneCount, ghostRuns, startHour, endHour, ppm, selected } = Astro.props;
+const height = (endHour - startHour) * 60 * ppm;
+const hours = Array.from({ length: endHour - startHour }, (_, i) => startHour + i);
+const iconKind = (b: GridBlock) => (b.dropIn ? "dropin" : b.kind);
+---
+
+<div
+  id={id}
+  class:list={["gday", { "gday--sel": selected }]}
+  style={`--lanes:${laneCount}`}
+  role="group"
+  aria-label={`${label} ${date}`}
+>
+  <div class="gday-head"><strong>{label}</strong> <span>{date}</span></div>
+  <div class="gday-body" style={`height:${height}px`}>
+    {hours.map((h) => <div class="gline" style={`top:${(h - startHour) * 60 * ppm}px`}></div>)}
+    {
+      blocks.map((b, i) => {
+        const top = (b.startMin - startHour * 60) * ppm;
+        const h = (b.endMin - b.startMin) * ppm;
+        const isGhost = b.kind === "ghost";
+        const style = isGhost
+          ? `top:${top}px;height:${h}px;left:calc(100% * ${ghostRuns[i]?.from ?? 0} / ${laneCount} + 3px);width:calc(100% * ${ghostRuns[i]?.count ?? laneCount} / ${laneCount} - 6px)`
+          : `top:${top}px;height:${h}px;left:calc(100% * ${lanes[i]} / ${laneCount} + 2px);width:calc(100% / ${laneCount} - 4px)`;
+        const detail = blockDetail(h, b.notes.length);
+        const cls = ["gblk", `gblk--${b.kind}`, b.dropIn ? "gblk--dropin" : "", `gblk--${detail}`].filter(Boolean).join(" ");
+        const Tag = b.href ? "a" : "div";
+        const all = [
+          `${[b.tag, ...b.extraTags].join(", ")}: ${b.courseCode} ${b.className}`,
+          b.when, b.room, b.seats, b.weeks, ...b.notes,
+        ].join(". ");
+        const extras = b.dropIn && detail === "compact" ? b.extraTags.map((t) => (t.startsWith("Drop-in") ? "Drop-in" : t)) : b.extraTags;
+        return (
+          <Tag class={cls} style={style} href={b.href ?? undefined} title={all} aria-label={b.href ? all : undefined}>
+            <span class="gblk-head">
+              <GridIcon kind={iconKind(b)} />
+              <span class="gblk-tag">{b.tag}</span>
+              {extras.map((t) => <span class="gblk-tag gblk-tag--x">{t}</span>)}
+            </span>
+            <span class="gblk-name">
+              {b.courseCode} {b.className}
+              {(isGhost || detail === "compact") && <span class="gblk-when"> {b.when}</span>}
+            </span>
+            {!isGhost && detail === "full" && (
+              <>
+                <span>{b.when}</span>
+                <span>{b.room}</span>
+                <span>{b.seats}</span>
+                <span>{b.weeks}</span>
+              </>
+            )}
+            {!isGhost && b.notes.map((n) => <span class="gblk-note">{n}</span>)}
+          </Tag>
+        );
+      })
+    }
+  </div>
+</div>
