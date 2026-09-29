@@ -8,6 +8,7 @@ import { weekToDate } from "../lib/engine/weeks";
 import type { Day } from "../lib/engine/types";
 import { DEFAULT_STUDENT_ID, loadStudentName } from "../lib/services/alloc";
 import { getViewState } from "../lib/view";
+import "../styles/week.css";
 
 // Must stay SSR (never prerender). Deploy CI POSTs to `/`: a same-origin POST must not 403 and a cross-origin
 // POST must 403 (Astro's CSRF check runs before this). This benign handler just redirects.
@@ -21,8 +22,7 @@ const q = Astro.url.searchParams;
 // Which week and day: the real teaching week for today (Canberra time); ?week= and ?day= move around it.
 const now = D.nowInCanberra();
 const wv = D.weekView(term, now);
-const asked = Number(q.get("week"));
-const week = Number.isInteger(asked) && asked >= 1 && asked <= term.teachingWeeks ? asked : wv.week;
+const week = D.parseWeek(q.get("week"), term) ?? wv.week;
 const thisWeek = week === wv.week;
 const today = thisWeek ? wv.today : null;
 const dates = [0, 1, 2, 3, 4, 5, 6].map((d) => weekToDate(term.startDate, term.breakAfterWeek, week, d as Day));
@@ -32,29 +32,35 @@ const day: Day = D.parseDay(q.get("day")) ?? today ?? 0;
 const clashes = D.eventClashes(events);
 const clashDays = new Set(clashes.map((c) => c.day));
 const problem = D.weekProblem(events, alloc, catalog, seats);
-const weekParam = q.get("week") && !thisWeek ? `&week=${week}` : "";
+const weekParam = !thisWeek ? `&week=${week}` : "";
 const dayHref = (d: number) => `/?day=${D.DAY_KEYS[d]}${weekParam}`;
+const nav = D.weekNav(term, week, wv.week);
+const weekHref = (w: number) => (w === wv.week ? "/" : `/?week=${w}`);
 
 // Greeting in the student's voice.
 const first = loadStudentName(DEFAULT_STUDENT_ID).split(/\s+/)[0] || "there";
 const hello = now.min < 5 * 60 ? "Evening" : now.min < 12 * 60 ? "Morning" : now.min < 17 * 60 ? "Afternoon" : "Evening";
 const todo = problem ? (problem.count === 1 ? "One thing to sort out." : `${problem.count} things to sort out.`) : "Nothing to sort out.";
-const sub = `${today !== null ? `${D.DAY_LONG[today]} ${D.dateLabel(dates[today])}` : `${D.dateLabel(dates[0])} to ${D.dateLabel(dates[4])}`} · Week ${week}${thisWeek && wv.note ? ` · ${wv.note}` : ""}`;
+const sub = thisWeek
+  ? `${today !== null ? `${D.DAY_LONG[today]} ${D.dateLabel(dates[today])}` : `${D.dateLabel(dates[0])} to ${D.dateLabel(dates[4])}`} · Week ${week} · this week${wv.note ? ` · ${wv.note}` : ""}`
+  : `Week ${week} · ${nav.dates}`;
 
 // Next up: the next class from now within this week.
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const solid = events.filter((e) => !e.optional);
 let next: { e: D.DayEvent; when: string } | null = null;
-for (const e of solid) {
-  if (today !== null && e.day < today) continue;
-  if (today !== null && e.day === today) {
-    if (e.end <= now.min) continue;
-    const mins = e.start - now.min;
-    next = { e, when: mins <= 0 ? `now, until ${D.time12(e.end)}` : mins <= 60 ? `in ${mins} min` : `at ${D.time12(e.start)}` };
-  } else {
-    next = { e, when: today !== null && e.day === today + 1 ? `tomorrow at ${D.time12(e.start)}` : `${D.DAY_LONG[e.day]} at ${D.time12(e.start)}` };
+if (thisWeek) {
+  for (const e of solid) {
+    if (today !== null && e.day < today) continue;
+    if (today !== null && e.day === today) {
+      if (e.end <= now.min) continue;
+      const mins = e.start - now.min;
+      next = { e, when: mins <= 0 ? `now, until ${D.time12(e.end)}` : mins <= 60 ? `in ${mins} min` : `at ${D.time12(e.start)}` };
+    } else {
+      next = { e, when: today !== null && e.day === today + 1 ? `tomorrow at ${D.time12(e.start)}` : `${D.DAY_LONG[e.day]} at ${D.time12(e.start)}` };
+    }
+    break;
   }
-  break;
 }
 
 // The one problem card.
@@ -86,17 +92,38 @@ const glance = days.map((d) => {
       <div class="g-greet">
         <h1 class="greet">{hello}, {first}. {todo}</h1>
         <p class="greet-sub">{sub}</p>
+        <nav class="weeknav" aria-label="Weeks">
+          <div class="weeknav-btns">
+            {nav.prev !== null ? (
+              <a class="weeknav-btn" href={weekHref(nav.prev)}>← Week {nav.prev}</a>
+            ) : (
+              <span class="weeknav-btn off">← Start of term</span>
+            )}
+            {!nav.isCurrent && <a class="weeknav-btn weeknav-now" href={weekHref(wv.week)}>This week</a>}
+            {nav.next !== null ? (
+              <a class="weeknav-btn" href={weekHref(nav.next)}>Week {nav.next} →</a>
+            ) : (
+              <span class="weeknav-btn off">End of term →</span>
+            )}
+          </div>
+          {nav.breakBefore && <p class="weeknav-break">Mid-semester break before week {week}</p>}
+          {nav.breakAfter && <p class="weeknav-break">Mid-semester break after week {week}</p>}
+        </nav>
       </div>
       <section class="next g-next" aria-label="Next up">
         <span class="ic"><Icon name="clock" /></span>
         {
-          next ? (
-            <p>
-              <b>{cap(D.eventName(next.e))}</b> {next.when}
-              {next.e.room && <><br /><span class="sub">{next.e.room}</span></>}
-            </p>
+          thisWeek ? (
+            next ? (
+              <p>
+                <b>{cap(D.eventName(next.e))}</b> {next.when}
+                {next.e.room && <><br /><span class="sub">{next.e.room}</span></>}
+              </p>
+            ) : (
+              <p>Nothing else on this week.</p>
+            )
           ) : (
-            <p>Nothing else on this week.</p>
+            <p>Week {week}: {D.plural(solid.length, "class", "classes")}.</p>
           )
         }
       </section>

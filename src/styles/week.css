@@ -1,0 +1,52 @@
+/* "My week" home page: previous/next week navigation, next to the greeting sub-line. Tokens come from tokens.css
+   (loaded via app.css on Shell), so this file only adds the .weeknav-* rules index.astro uses. */
+
+.weeknav {
+  margin-top: 14px;
+}
+
+.weeknav-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.weeknav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  background: transparent;
+  transition:
+    background 0.16s,
+    color 0.16s;
+}
+
+a.weeknav-btn:hover {
+  background: var(--inset);
+}
+
+.weeknav-btn.weeknav-now {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.weeknav-btn.off {
+  border-style: dashed;
+  border-color: var(--line);
+  color: var(--ink-2);
+  cursor: not-allowed;
+}
+
+.weeknav-break {
+  margin-top: 8px;
+  color: var(--caution);
+  font-size: 13px;
+}

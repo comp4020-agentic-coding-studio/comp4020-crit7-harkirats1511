@@ -269,6 +269,46 @@ export function parseDay(v: string | null): Day | null {
   return i >= 0 && i <= 4 ? (i as Day) : null;
 }
 
+/** "8" -> 8 when it's a whole teaching week (1..term.teachingWeeks); anything else (missing, not an integer, out of range) -> null. */
+export function parseWeek(v: string | null, term: Term): number | null {
+  if (v === null || !/^\d+$/.test(v.trim())) return null;
+  const n = Number(v.trim());
+  return n >= 1 && n <= term.teachingWeeks ? n : null;
+}
+
+export interface WeekNav {
+  /** The week a "previous" link would land on, or null when `week` is the first teaching week. */
+  prev: number | null;
+  /** The week a "next" link would land on, or null when `week` is the last teaching week. */
+  next: number | null;
+  /** True when `week` is the week the student would land on today (the value `weekView` returns). */
+  isCurrent: boolean;
+  /** True when `week` is the first teaching week after the mid-semester break. */
+  breakBefore: boolean;
+  /** True when `week` is the last teaching week before the mid-semester break. */
+  breakAfter: boolean;
+  /** "Week 8" */
+  label: string;
+  /** "28 September to 2 October" (Monday to Friday of `week`). */
+  dates: string;
+}
+
+/** Stepping between teaching weeks around `week`, clamped to 1..term.teachingWeeks, with the mid-semester break named honestly. */
+export function weekNav(term: Term, week: number, currentWeek: number): WeekNav {
+  const brk = term.breakAfterWeek;
+  const mon = weekToDate(term.startDate, brk, week, 0);
+  const fri = weekToDate(term.startDate, brk, week, 4);
+  return {
+    prev: week > 1 ? week - 1 : null,
+    next: week < term.teachingWeeks ? week + 1 : null,
+    isCurrent: week === currentWeek,
+    breakBefore: brk !== null && week === brk + 1,
+    breakAfter: brk !== null && week === brk,
+    label: `Week ${week}`,
+    dates: `${dateLabel(mon)} to ${dateLabel(fri)}`,
+  };
+}
+
 // ---------- the week's classes ----------
 
 export interface DayEvent {

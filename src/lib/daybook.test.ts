@@ -75,6 +75,44 @@ describe("which week", () => {
   });
 });
 
+describe("week navigation", () => {
+  it("parseWeek only accepts a whole teaching week", () => {
+    expect(D.parseWeek("8", term)).toBe(8);
+    expect(D.parseWeek("1", term)).toBe(1);
+    expect(D.parseWeek("12", term)).toBe(12);
+    expect(D.parseWeek("0", term)).toBeNull();
+    expect(D.parseWeek("13", term)).toBeNull();
+    expect(D.parseWeek("-1", term)).toBeNull();
+    expect(D.parseWeek("8.5", term)).toBeNull();
+    expect(D.parseWeek("abc", term)).toBeNull();
+    expect(D.parseWeek("", term)).toBeNull();
+    expect(D.parseWeek(null, term)).toBeNull();
+  });
+
+  it("clamps prev/next at the first and last teaching week", () => {
+    expect(D.weekNav(term, 1, 8)).toMatchObject({ prev: null, next: 2 });
+    expect(D.weekNav(term, 12, 8)).toMatchObject({ prev: 11, next: null });
+    expect(D.weekNav(term, 7, 8)).toMatchObject({ prev: 6, next: 8 });
+  });
+
+  it("marks isCurrent against the week being compared to", () => {
+    expect(D.weekNav(term, 8, 8).isCurrent).toBe(true);
+    expect(D.weekNav(term, 9, 8).isCurrent).toBe(false);
+  });
+
+  it("flags the week right after and right before the mid-semester break", () => {
+    expect(D.weekNav(term, 6, 8)).toMatchObject({ breakBefore: false, breakAfter: true });
+    expect(D.weekNav(term, 7, 8)).toMatchObject({ breakBefore: true, breakAfter: false });
+    expect(D.weekNav(term, 8, 8)).toMatchObject({ breakBefore: false, breakAfter: false });
+  });
+
+  it("labels and dates match the real term's calendar", () => {
+    expect(D.weekNav(term, 7, 8)).toMatchObject({ label: "Week 7", dates: "21 September to 25 September" });
+    expect(D.weekNav(term, 8, 8)).toMatchObject({ label: "Week 8", dates: "28 September to 2 October" });
+    expect(D.weekNav(term, 6, 8)).toMatchObject({ label: "Week 6", dates: "31 August to 4 September" });
+  });
+});
+
 describe("my week on the real data", () => {
   it("week 8 has exactly one clash: the Tuesday lectures, 1–2pm, and nothing can fix it", () => {
     const ev = D.weekEvents(real, catalog, 8);
