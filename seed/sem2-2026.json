@@ -1,0 +1,886 @@
+{
+  "$comment": "Sem 2 2026 MyTimetable data for Harkirat's four courses, transcribed from screenshots. Weeks are MyTT raw date strings (converted by src/lib/seed/mytt-weeks.ts). Capacity = MyTT Free, +1 for the allocated option. Staff shown as raw u-numbers are null. See docs/SEED-GUIDE.md.",
+  "term": {
+    "id": "2026s2",
+    "name": "Semester 2 2026",
+    "startDate": "2026-07-27",
+    "teachingWeeks": 12,
+    "breakAfterWeek": 6
+  },
+  "student": {
+    "id": "me",
+    "name": "Harkirat Singh Sandhu"
+  },
+  "courses": [
+    {
+      "id": "comp3900",
+      "code": "COMP3900",
+      "title": "Human-Computer Interaction",
+      "aliases": [
+        "COMP6390"
+      ],
+      "groups": [
+        {
+          "id": "comp3900-leca",
+          "kind": "lecture",
+          "name": "Lec A",
+          "options": [
+            {
+              "code": "01",
+              "capacity": 122,
+              "campus": "ACTON",
+              "staff": "Charles Martin",
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Mon",
+                  "start": "13:00",
+                  "end": "15:00",
+                  "weeks": "27/7-31/8, 21/9-28/9, 12/10-26/10",
+                  "location": "Cinema Rm 1.02_Lowitja O'Donoghue Cultural Centre Bldg 153"
+                }
+              ]
+            },
+            {
+              "code": "01_Clone",
+              "capacity": 992,
+              "campus": "ACTON",
+              "staff": "Charles Martin",
+              "overflow": true,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Mon",
+                  "start": "13:00",
+                  "end": "15:00",
+                  "weeks": "27/7-31/8, 21/9-28/9, 12/10-26/10",
+                  "location": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "comp3900-tuta",
+          "kind": "tutorial",
+          "name": "Tut A",
+          "options": [
+            {
+              "code": "01",
+              "capacity": 7,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Tue",
+                  "start": "10:30",
+                  "end": "11:00",
+                  "weeks": "28/7-1/9, 22/9-27/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95",
+                  "dropIn": true
+                },
+                {
+                  "part": "P2",
+                  "day": "Tue",
+                  "start": "09:00",
+                  "end": "10:30",
+                  "weeks": "4/8-1/9, 22/9-27/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95"
+                }
+              ]
+            },
+            {
+              "code": "02",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Tue",
+                  "start": "12:30",
+                  "end": "13:00",
+                  "weeks": "28/7-1/9, 22/9-27/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95",
+                  "dropIn": true
+                },
+                {
+                  "part": "P2",
+                  "day": "Tue",
+                  "start": "11:00",
+                  "end": "12:30",
+                  "weeks": "4/8-1/9, 22/9-27/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95"
+                }
+              ]
+            },
+            {
+              "code": "04",
+              "capacity": 2,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Wed",
+                  "start": "11:00",
+                  "end": "12:30",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95"
+                },
+                {
+                  "part": "P2",
+                  "day": "Wed",
+                  "start": "12:30",
+                  "end": "13:00",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95",
+                  "dropIn": true
+                }
+              ]
+            },
+            {
+              "code": "05",
+              "capacity": 1,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Wed",
+                  "start": "14:00",
+                  "end": "15:30",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95"
+                },
+                {
+                  "part": "P2",
+                  "day": "Wed",
+                  "start": "15:30",
+                  "end": "16:00",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95",
+                  "dropIn": true
+                }
+              ]
+            },
+            {
+              "code": "06",
+              "capacity": 2,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Wed",
+                  "start": "16:00",
+                  "end": "17:30",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95"
+                },
+                {
+                  "part": "P2",
+                  "day": "Wed",
+                  "start": "17:30",
+                  "end": "18:00",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95",
+                  "dropIn": true
+                }
+              ]
+            },
+            {
+              "code": "07",
+              "capacity": 1,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Fri",
+                  "start": "09:00",
+                  "end": "10:30",
+                  "weeks": "7/8-4/9, 25/9-30/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95"
+                },
+                {
+                  "part": "P2",
+                  "day": "Fri",
+                  "start": "10:30",
+                  "end": "11:00",
+                  "weeks": "7/8-4/9, 25/9-30/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95",
+                  "dropIn": true
+                }
+              ]
+            },
+            {
+              "code": "08",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Fri",
+                  "start": "11:00",
+                  "end": "12:30",
+                  "weeks": "7/8-4/9, 25/9-30/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95"
+                },
+                {
+                  "part": "P2",
+                  "day": "Fri",
+                  "start": "12:30",
+                  "end": "13:00",
+                  "weeks": "7/8-4/9, 25/9-30/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95",
+                  "dropIn": true
+                }
+              ]
+            },
+            {
+              "code": "12",
+              "capacity": 2,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Tue",
+                  "start": "15:00",
+                  "end": "16:30",
+                  "weeks": "4/8-1/9, 22/9-27/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95"
+                },
+                {
+                  "part": "P2",
+                  "day": "Tue",
+                  "start": "16:30",
+                  "end": "17:00",
+                  "weeks": "4/8-1/9, 22/9-27/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95",
+                  "dropIn": true
+                }
+              ]
+            },
+            {
+              "code": "16",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Thu",
+                  "start": "16:00",
+                  "end": "17:30",
+                  "weeks": "6/8-3/9, 24/9-29/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95"
+                },
+                {
+                  "part": "P2",
+                  "day": "Thu",
+                  "start": "17:30",
+                  "end": "18:00",
+                  "weeks": "6/8-3/9, 24/9-29/10",
+                  "location": "Rm 2.03_Fulton Muir Bldg 95",
+                  "dropIn": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "comp4020",
+      "code": "COMP4020",
+      "title": "Agentic Coding Studio",
+      "aliases": [
+        "COMP8020"
+      ],
+      "groups": [
+        {
+          "id": "comp4020-leca",
+          "kind": "lecture",
+          "name": "Lec A",
+          "options": [
+            {
+              "code": "01",
+              "capacity": 1,
+              "campus": "ACTON",
+              "staff": "Benjamin John Swift",
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Thu",
+                  "start": "11:00",
+                  "end": "13:00",
+                  "weeks": "30/7-3/9, 24/9-29/10",
+                  "location": "Rm 2.02_Fulton Muir Bldg 95"
+                }
+              ]
+            },
+            {
+              "code": "01_Clone",
+              "capacity": 974,
+              "campus": "ACTON",
+              "staff": "Benjamin John Swift",
+              "overflow": true,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Thu",
+                  "start": "11:00",
+                  "end": "13:00",
+                  "weeks": "30/7-3/9, 24/9-29/10",
+                  "location": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "comp4020-tuta",
+          "kind": "tutorial",
+          "name": "Tut A",
+          "options": [
+            {
+              "code": "01",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Mon",
+                  "start": "14:00",
+                  "end": "15:30",
+                  "weeks": "3/8-31/8, 21/9-28/9, 12/10-26/10",
+                  "location": "Rm 4.03_Marie Reay Bldg 155"
+                },
+                {
+                  "part": "P2",
+                  "day": "Tue",
+                  "start": "14:00",
+                  "end": "15:30",
+                  "weeks": "6/10",
+                  "location": "Rm 4.03_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "02",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Mon",
+                  "start": "15:30",
+                  "end": "17:00",
+                  "weeks": "3/8-31/8, 21/9-28/9, 12/10-26/10",
+                  "location": "Rm 4.03_Marie Reay Bldg 155"
+                },
+                {
+                  "part": "P2",
+                  "day": "Wed",
+                  "start": "15:30",
+                  "end": "17:00",
+                  "weeks": "7/10",
+                  "location": "Rm 3.05_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "03",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Wed",
+                  "start": "09:00",
+                  "end": "10:30",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 4.03_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "04",
+              "capacity": 2,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Wed",
+                  "start": "10:30",
+                  "end": "12:00",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 4.03_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "05",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Wed",
+                  "start": "14:00",
+                  "end": "15:30",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 4.03_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "06",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Wed",
+                  "start": "15:30",
+                  "end": "17:00",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 4.03_Marie Reay Bldg 155"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "comp4650",
+      "code": "COMP4650",
+      "title": "Document Analysis",
+      "aliases": [
+        "COMP6490"
+      ],
+      "groups": [
+        {
+          "id": "comp4650-leca",
+          "kind": "lecture",
+          "name": "Lec A",
+          "options": [
+            {
+              "code": "01",
+              "capacity": 51,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Tue",
+                  "start": "13:00",
+                  "end": "15:30",
+                  "weeks": "28/7-1/9, 22/9-27/10",
+                  "location": "Lecture Theatre 1.28A_RN Robertson Bldg 46"
+                }
+              ]
+            },
+            {
+              "code": "01_Clone",
+              "capacity": 999,
+              "campus": "ACTON",
+              "staff": null,
+              "overflow": true,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Tue",
+                  "start": "13:00",
+                  "end": "15:30",
+                  "weeks": "28/7-1/9, 22/9-27/10",
+                  "location": null
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "comp4650-coma",
+          "kind": "lab",
+          "name": "Com A",
+          "options": [
+            {
+              "code": "01",
+              "capacity": 15,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Tue",
+                  "start": "17:00",
+                  "end": "18:30",
+                  "weeks": "4/8, 18/8, 1/9, 22/9-29/9, 13/10",
+                  "location": "Rms N115/N116_Skaidrite Darius Bldg 108"
+                },
+                {
+                  "part": "P2",
+                  "day": "Tue",
+                  "start": "18:30",
+                  "end": "19:00",
+                  "weeks": "4/8, 18/8, 1/9, 22/9-29/9, 13/10",
+                  "location": "Rms N115/N116_Skaidrite Darius Bldg 108",
+                  "dropIn": true
+                }
+              ]
+            },
+            {
+              "code": "03",
+              "capacity": 1,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Thu",
+                  "start": "14:00",
+                  "end": "15:30",
+                  "weeks": "6/8, 20/8, 3/9, 24/9-1/10, 15/10",
+                  "location": "Rm N111_Skaidrite Darius Bldg 108"
+                },
+                {
+                  "part": "P2",
+                  "day": "Thu",
+                  "start": "15:30",
+                  "end": "16:00",
+                  "weeks": "6/8, 20/8, 3/9, 24/9-1/10, 15/10",
+                  "location": "Rm N111_Skaidrite Darius Bldg 108",
+                  "dropIn": true
+                }
+              ]
+            },
+            {
+              "code": "05",
+              "capacity": 1,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Fri",
+                  "start": "11:00",
+                  "end": "12:30",
+                  "weeks": "7/8, 21/8, 4/9, 25/9-2/10, 16/10",
+                  "location": "Rm N111_Skaidrite Darius Bldg 108"
+                },
+                {
+                  "part": "P2",
+                  "day": "Fri",
+                  "start": "12:30",
+                  "end": "13:00",
+                  "weeks": "7/8, 21/8, 4/9, 25/9-2/10, 16/10",
+                  "location": "Rm N111_Skaidrite Darius Bldg 108",
+                  "dropIn": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "comp4650-drob",
+          "kind": "dropin",
+          "name": "Dro B",
+          "exemptFromClash": true,
+          "options": [
+            {
+              "code": "01",
+              "capacity": 1,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Wed",
+                  "start": "15:00",
+                  "end": "17:00",
+                  "weeks": "12/8-2/9, 23/9-28/10",
+                  "location": "Rm 2.04_Fulton Muir Bldg 95"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "finm1001",
+      "code": "FINM1001",
+      "title": "Foundations of Finance",
+      "aliases": [],
+      "groups": [
+        {
+          "id": "finm1001-leca",
+          "kind": "lecture",
+          "name": "Lec A",
+          "options": [
+            {
+              "code": "01",
+              "capacity": 9,
+              "campus": "ACTON",
+              "staff": "Anna von Reibnitz",
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Tue",
+                  "start": "12:00",
+                  "end": "14:00",
+                  "weeks": "28/7-1/9, 22/9-27/10",
+                  "location": "Lec Theatre_Copland Bldg 25"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "finm1001-tuta",
+          "kind": "tutorial",
+          "name": "Tut A",
+          "options": [
+            {
+              "code": "01",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": "Martha Dingle",
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Wed",
+                  "start": "14:00",
+                  "end": "15:00",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 3.02_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "02",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Thu",
+                  "start": "10:00",
+                  "end": "11:00",
+                  "weeks": "6/8-3/9, 24/9-29/10",
+                  "location": "Rm 3.02_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "03",
+              "capacity": 1,
+              "campus": "ACTON",
+              "staff": "Daniel Kan",
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Thu",
+                  "start": "09:00",
+                  "end": "10:00",
+                  "weeks": "6/8-3/9, 24/9-29/10",
+                  "location": "Rm 3.02_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "04",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": "Martha Dingle",
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Thu",
+                  "start": "11:00",
+                  "end": "12:00",
+                  "weeks": "6/8-3/9, 24/9-29/10",
+                  "location": "Rm 3.02_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "05",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": "Martha Dingle",
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Wed",
+                  "start": "15:00",
+                  "end": "16:00",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 3.02_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "06",
+              "capacity": 1,
+              "campus": "ACTON",
+              "staff": "Daniel Kan",
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Wed",
+                  "start": "17:00",
+                  "end": "18:00",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 3.02_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "07",
+              "capacity": 3,
+              "campus": "ACTON",
+              "staff": "Martha Dingle",
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Wed",
+                  "start": "16:00",
+                  "end": "17:00",
+                  "weeks": "5/8-2/9, 23/9-28/10",
+                  "location": "Rm 3.02_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "08",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": "Daniel Kan",
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Tue",
+                  "start": "17:00",
+                  "end": "18:00",
+                  "weeks": "4/8-1/9, 22/9-27/10",
+                  "location": "Rm 3.02_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "09",
+              "capacity": 3,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Thu",
+                  "start": "17:00",
+                  "end": "18:00",
+                  "weeks": "6/8-3/9, 24/9-29/10",
+                  "location": "Rm 3.02_Marie Reay Bldg 155"
+                }
+              ]
+            },
+            {
+              "code": "10",
+              "capacity": 0,
+              "campus": "ACTON",
+              "staff": null,
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Thu",
+                  "start": "16:00",
+                  "end": "17:00",
+                  "weeks": "6/8-3/9, 24/9-29/10",
+                  "location": "Rm 3.02_Marie Reay Bldg 155"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "finm1001-wora",
+          "kind": "workshop",
+          "name": "Wor A",
+          "options": [
+            {
+              "code": "01",
+              "capacity": 39,
+              "campus": "ACTON",
+              "staff": "Anna von Reibnitz",
+              "sessions": [
+                {
+                  "part": "P1",
+                  "day": "Tue",
+                  "start": "16:00",
+                  "end": "17:00",
+                  "weeks": "28/7-1/9, 22/9-27/10",
+                  "location": "Lec Theatre_Copland Bldg 25"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "allocations": [
+    {
+      "group": "comp3900-leca",
+      "option": "01"
+    },
+    {
+      "group": "comp3900-tuta",
+      "option": "05"
+    },
+    {
+      "group": "comp4020-leca",
+      "option": "01"
+    },
+    {
+      "group": "comp4020-tuta",
+      "option": "04"
+    },
+    {
+      "group": "comp4650-leca",
+      "option": "01"
+    },
+    {
+      "group": "comp4650-coma",
+      "option": "03"
+    },
+    {
+      "group": "comp4650-drob",
+      "option": "01"
+    },
+    {
+      "group": "finm1001-leca",
+      "option": "01"
+    },
+    {
+      "group": "finm1001-tuta",
+      "option": "03"
+    },
+    {
+      "group": "finm1001-wora",
+      "option": "01"
+    }
+  ]
+}

@@ -7,7 +7,14 @@ import { z } from "zod";
 const todo = z.literal("TODO");
 export const dayName = z.enum(["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]);
 export const timeText = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "expected HH:MM");
-export const weeksText = z.string().regex(/^\d{1,2}(-\d{1,2})?(,\d{1,2}(-\d{1,2})?)*$/, 'expected e.g. "1-6,8-12"');
+const teachingWeeksText = /^\d{1,2}(-\d{1,2})?(,\d{1,2}(-\d{1,2})?)*$/;
+// Additive: MyTT raw date strings such as "27/7-31/8, 21/9-28/9, 6/10" are also accepted (converted by mytt-weeks.ts).
+const myttDatesText = /^\d{1,2}\/\d{1,2}(-\d{1,2}\/\d{1,2})?(\s*,\s*\d{1,2}\/\d{1,2}(-\d{1,2}\/\d{1,2})?)*$/;
+export const weeksText = z
+  .string()
+  .refine((v) => teachingWeeksText.test(v) || myttDatesText.test(v), {
+    message: 'expected teaching weeks like "1-6,8-12" or MyTT dates like "27/7-31/8, 21/9-28/9"',
+  });
 
 export const seedSession = z.object({
   part: z.string().default("P1"),
@@ -40,7 +47,8 @@ export const seedGroup = z.object({
   kind: z.enum(["lecture", "tutorial", "workshop", "lab", "dropin", "other"]),
   name: z.string(),
   exemptFromClash: z.boolean().default(false),
-  options: z.array(seedOption).min(1),
+  /** "TODO" = the student has not supplied this group's options yet (draft mode only; the loader skips it). */
+  options: z.array(seedOption).min(1).or(todo),
 });
 
 export const seedCourse = z.object({
