@@ -9,3 +9,37 @@ where it lives --- `fly.toml`, the `Dockerfile`, the CI workflow and
 [course website](https://comp.anu.edu.au/courses/comp4020-agentic-coding-studio/)
 publishes this deliverable's brief and spec. Read them before you plan or build;
 what the agent needs to carry from any of it is your call.
+
+## How to work in here
+
+Carried forward from earlier prototypes --- rules that held up across more than
+one build, not tied to any one week's content or framework.
+
+- Decisions here are made on merit, never on how much of the deadline is
+  left. If time runs short, cut scope --- skip a pass, drop a nice-to-have ---
+  never lower the bar on whatever is kept in. A rushed-looking page is a
+  worse outcome than a missing one.
+- Keep the dev server running (`pnpm dev`) so you see changes as you make them.
+- Run `pnpm check` before you push. Never commit a red state.
+- Open the page in a browser and look at it. The rendered page is the truth;
+  your mental model of it isn't.
+- When a check fails, read its output before you change anything.
+
+## Orchestration workflow
+
+I act as orchestrator, not author. Every change to this repo --- content,
+code, or configuration --- is drafted by a dispatched subagent, never written
+by me directly and never accepted on its own report:
+
+- A subagent reporting "pnpm check green" is necessary, not sufficient. A
+  static spec suite can prove the hooks exist while real rendering/interaction
+  is still broken --- independent re-verification (reading the actual diff,
+  looking at real screenshots or driving the running app in a browser)
+  happens before anything is committed.
+
+## Spec: checkable vs judged
+
+Split the published spec lines before writing tests. Mechanically checkable
+ones get a test in `spec/`, asserting the contract (what the page must do),
+not the markup or implementation. Ones only a person can judge don't get a
+test --- name them here so nothing is silently assumed to be "handled."
